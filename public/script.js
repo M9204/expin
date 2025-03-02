@@ -1,3 +1,5 @@
+console.log('script.js is loaded!');
+
 let totalIncome = 0;
 let totalExpenses = 0;
 
@@ -7,6 +9,8 @@ window.onload = function () {
   const formattedDate = today.toISOString().split('T')[0];
   dateInput.value = formattedDate;
   document.getElementById('inputDate').classList.remove('hidden');
+
+  loadData(); // Load data when the page is loaded
 };
 
 function setEntryType(type) {
@@ -30,32 +34,35 @@ function setEntryType(type) {
     date: date
   };
 
+  // Add the row to the table
   addRowToTable(type, title, amount, source, notes, date);
+
+  // Save data to the server
+  saveDataToServer(entryData);
+
   resetForm();  // Clear the input fields after submitting the entry
 }
 
 function addRowToTable(type, title, amount, source, notes, date) {
   const tableBody = document.getElementById('entriesTableBody');
   const row = document.createElement('tr');
-  
-  // Create a new row with the corrected column positions for source and status
+
   row.innerHTML = `
     <td><input type="checkbox"></td>
     <td>${date}</td>
     <td>${title}</td>
     <td class="${type === 'income' ? 'green' : 'red'}">$${amount.toFixed(2)}</td>
-    <td>${source}</td>  <!-- Source column -->
+    <td>${source}</td>
     <td>
       <select class="status-dropdown">
-        <option value="">update staus</option>
+        <option value="">update status</option>
         <option value="pending">Pending</option>
         <option value="done">Done</option>
       </select>
-    </td> <!-- Status column -->
+    </td>
     <td>${notes}</td>
   `;
-  
-  // Add event listener to update status
+
   const statusDropdown = row.querySelector('.status-dropdown');
   statusDropdown.addEventListener('change', function () {
     const status = statusDropdown.value;
@@ -64,7 +71,6 @@ function addRowToTable(type, title, amount, source, notes, date) {
 
   tableBody.appendChild(row);
 
-  // Update totals
   if (type === 'income') {
     totalIncome += amount;
     document.getElementById('totalIncome').textContent = `$${totalIncome.toFixed(2)}`;
@@ -73,12 +79,10 @@ function addRowToTable(type, title, amount, source, notes, date) {
     document.getElementById('totalExpenses').textContent = `$${totalExpenses.toFixed(2)}`;
   }
 
-  // Update net total
   const netTotal = totalIncome - totalExpenses;
   document.getElementById('netTotal').textContent = `$${netTotal.toFixed(2)}`;
 }
 
-// Update row background color based on status
 function updateRowBackgroundColor(row, status) {
   if (status === 'done') {
     row.style.backgroundColor = 'lightgreen';
@@ -140,12 +144,10 @@ function deleteSelectedEntries() {
   document.getElementById('netTotal').textContent = `$${netTotal.toFixed(2)}`;
 }
 
-// Delete all entries
 function deleteAllEntries() {
   const tableBody = document.getElementById('entriesTableBody');
-  tableBody.innerHTML = ''; // Clear all rows
-  
-  // Reset the totals
+  tableBody.innerHTML = '';
+
   totalIncome = 0;
   totalExpenses = 0;
   document.getElementById('totalIncome').textContent = `$${totalIncome.toFixed(2)}`;
@@ -153,25 +155,20 @@ function deleteAllEntries() {
   document.getElementById('netTotal').textContent = `$${(totalIncome - totalExpenses).toFixed(2)}`;
 }
 
-// Export to Excel function
 function exportToExcel() {
-  const table = document.querySelector("table"); // Get the table
-  const workbook = XLSX.utils.table_to_book(table, { sheet: "Sheet 1" }); // Convert the table to a workbook
-  const excelFile = XLSX.write(workbook, { bookType: "xlsx", type: "binary" }); // Generate binary content for the Excel file
+  const table = document.querySelector("table");
+  const workbook = XLSX.utils.table_to_book(table, { sheet: "Sheet 1" });
+  const excelFile = XLSX.write(workbook, { bookType: "xlsx", type: "binary" });
 
-  // Create a Blob object with the binary content and set the MIME type for Excel files
   const blob = new Blob([s2ab(excelFile)], { type: "application/octet-stream" });
-  
-  // Create a link element to download the file
+
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "expense_income_tracker.xlsx"; // File name for download
-  
-  // Trigger the download by simulating a click event
+  link.download = "expense_income_tracker.xlsx";
+
   link.click();
 }
 
-// Helper function to convert the binary string to an array buffer
 function s2ab(str) {
   const buf = new ArrayBuffer(str.length);
   const view = new Uint8Array(buf);
@@ -181,12 +178,43 @@ function s2ab(str) {
   return buf;
 }
 
-// Clear the form fields
 function resetForm() {
   document.getElementById('title').value = '';
   document.getElementById('amount').value = '';
   document.getElementById('source').value = '';
   document.getElementById('notes').value = '';
   document.getElementById('date').value = new Date().toISOString().split('T')[0];
-  hideInputs();  // Hide inputs when the form is reset
+  hideInputs();
+}
+
+// Save data to server
+function saveDataToServer(entryData) {
+  fetch('/api/data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(entryData),
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('Data saved successfully:', data);
+  })
+  .catch(error => {
+    console.error('Error saving data:', error);
+  });
+}
+
+// Load data from server and display it in the table
+function loadData() {
+  fetch('/api/data')
+    .then(response => response.json())
+    .then(data => {
+      data.forEach(entry => {
+        addRowToTable(entry.type, entry.title, entry.amount, entry.source, entry.notes, entry.date);
+      });
+    })
+    .catch(error => {
+      console.error('Error loading data:', error);
+    });
 }
