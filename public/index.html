@@ -1,0 +1,91 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense and Income Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Expense and Income Tracker</h1>
+        </div>
+
+        <!-- Total display section -->
+        <div class="total-display">
+            <h3>Total Income: <span id="totalIncome" class="green">$0.00</span></h3>
+            <h3>Total Expenses: <span id="totalExpenses" class="red">$0.00</span></h3>
+            <h3>Net Total: <span id="netTotal">$0.00</span></h3>
+        </div>
+
+        <!-- Entry form -->
+        <div class="form-container">
+            <div id="inputTitle" class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" id="title" placeholder="Enter Title">
+            </div>
+
+            <div id="inputDate" class="form-group hidden">
+                <label for="date">Date:</label>
+                <input type="date" id="date">
+            </div>
+
+            <div id="inputAmount" class="form-group hidden">
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" placeholder="Enter Amount" step="0.01" min="0">
+            </div>
+
+            <div id="inputSource" class="form-group hidden">
+                <label for="source">Source Type:</label>
+                <select id="source">
+                    <option value="source">select soucre</option>
+                    <option value="mine">Mine</option>
+                    <option value="company">Company</option>
+                    <option value="others">Others</option>
+                </select>
+            </div>
+
+            <div id="inputNotes" class="form-group hidden">
+                <label for="notes">Notes:</label>
+                <textarea id="notes" placeholder="Enter Notes"></textarea>
+            </div>
+
+            <!-- Income and Expense Buttons -->
+            <button id="incomeBtn" onclick="setEntryType('income')">Add Income</button>
+            <button id="expenseBtn" onclick="setEntryType('expense')">Add Expense</button>
+            <button id="resetBtn" onclick="resetForm()">Clear</button>
+        </div>
+
+        <!-- Entries table -->
+        <button id="deleteSelectedBtn" onclick="deleteSelectedEntries()">Delete Selected</button>
+
+        <button id="exportBtn" onclick="exportToExcel()">Export to Excel</button>
+        <button id="deleteAllBtn" onclick="deleteAllEntries()">Delete All Entries</button>
+
+        <div id="entriesContainer" class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Date</th>
+                        <th>Title</th>
+                        <th>Amount</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="entriesTableBody">
+                    <!-- Entries will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+</body>
+
+</html>
