@@ -1,94 +1,348 @@
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense and Income Tracker</title>
-    <link rel="stylesheet" href="./style.css">
-    <script href="./script.js"></script>
+    <title>Box Volume and Shipping Calculator</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    /* Container for the whole page */
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 10px;
+    }
+
+    /* Make the table more mobile-friendly */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        overflow-x: auto;
+        display: block;
+    }
+
+    table, th, td {
+        border: 1px solid #ddd;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: center;
+    }
+
+    th {
+        background-color: #f4f4f4;
+    }
+
+    /* Input and button styling */
+    input {
+        padding: 10px;
+        margin: 5px;
+        width: calc(100% - 20px);
+        box-sizing: border-box;
+    }
+
+    button {
+        padding: 12px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: 5px;
+        cursor: pointer;
+        margin-top: 8px;
+        width: 100%;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+    /* Style for total section */
+    .total {
+        font-weight: bold;
+        margin-top: 20px;
+    }
+
+    #clearButton, #exportButton {
+        margin-top: 8px;
+        padding: 12px;
+        background-color: #f44336;
+    }
+
+    #clearButton:hover, #exportButton:hover {
+        background-color: #e53935;
+    }
+
+    #loadingSpinner {
+        display: none;
+        padding: 12px;
+        
+    }
+
+    /* Mobile-friendly media queries */
+    @media screen and (max-width: 768px) {
+        body {
+            margin: 10px;
+            font-size: 14px;
+        }
+
+        table {
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 8px;
+        }
+
+        button {
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        .total {
+            font-size: 14px;
+        }
+
+        /* Adjust input fields */
+        input {
+            font-size: 16px;
+        }
+
+        .container {
+            padding: 5px;
+        }
+
+        /* Make the table scrollable */
+        table {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+
+    @media screen and (max-width: 480px) {
+        /* Further adjustments for very small screens */
+        button {
+            font-size: 18px;
+            padding: 10px;
+        }
+
+        .total {
+            font-size: 18px;
+        }
+
+        input {
+            padding: 12px;
+        }
+
+        .container {
+            padding: 5px;
+        }
+    }
+</style>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
-
-    
 </head>
-
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Expense and Income Tracker</h1>
-        </div>
 
-        <!-- Total display section -->
-        <div class="total-display">
-            <h3>Total Income: <span id="totalIncome" class="green">$0.00</span></h3>
-            <h3>Total Expenses: <span id="totalExpenses" class="red">$0.00</span></h3>
-            <h3>Net Total: <span id="netTotal">$0.00</span></h3>
-        </div>
+    <h1>Invoice Title</h1>
+    <label for="invoiceTitle">Invoice Title:</label>
+    <input type="text" id="invoiceTitle" placeholder="Enter title">
 
-        <!-- Entry form -->
-        <div class="form-container">
-            <div id="inputTitle" class="form-group">
-                <label for="title">Title:</label>
-                <input type="text" id="title" placeholder="Enter Title">
-            </div>
+    <!-- User input for the number of boxes -->
+    <label for="numBoxes">Enter the total number of boxes:</label>
+    <input type="number" id="numBoxes" min="1" value="1">
+    <button onclick="startBoxInput()">Start Box Input</button>
 
-            <div id="inputDate" class="form-group hidden">
-                <label for="date">Date:</label>
-                <input type="date" id="date">
-            </div>
+    <!-- Dynamic form for box data input -->
+    <div id="boxInputs"></div>
+    <div id="loadingSpinner" style="display:none;">Loading...</div>
+    <button id="saveNextButton" onclick="saveAndNext()">Save and Next</button>
+    <!-- Table to display box data and results -->
+    <table id="boxTable">
+        <thead>
+            <tr>
+                <th>L (cm)</th>
+                <th>W (cm)</th>
+                <th>H (cm)</th>
+                <th>Gross Weight (kg)</th>
+                <th>Volume (m³)</th>
+                <th>Air</th>
+                <th>Sea</th>
+                <th>Land</th>
+                
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-            <div id="inputAmount" class="form-group hidden">
-                <label for="amount">Amount:</label>
-                <input type="number" id="amount" placeholder="Enter Amount" step="0.01" min="0">
-            </div>
-
-            <div id="inputSource" class="form-group hidden">
-                <label for="source">Source Type:</label>
-                <select id="source">
-                    <option value="source">select soucre</option>
-                    <option value="mine">Mine</option>
-                    <option value="company">Company</option>
-                    <option value="others">Others</option>
-                </select>
-            </div>
-
-            <div id="inputNotes" class="form-group hidden">
-                <label for="notes">Notes:</label>
-                <textarea id="notes" placeholder="Enter Notes"></textarea>
-            </div>
-
-            <!-- Income and Expense Buttons -->
-            <button id="incomeBtn" onclick="setEntryType('income')">Add Income</button>
-            <button id="expenseBtn" onclick="setEntryType('expense')">Add Expense</button>
-            <button id="resetBtn" onclick="resetForm()">Clear</button>
-        </div>
-
-        <!-- Entries table -->
-        <button id="deleteSelectedBtn" onclick="deleteSelectedEntries()">Delete Selected</button>
-
-        <button id="exportBtn" onclick="exportToExcel()">Export to Excel</button>
-        <button id="deleteAllBtn" onclick="deleteAllEntries()">Delete All Entries</button>
-
-        <div id="entriesContainer" class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Select</th>
-                        <th>Date</th>
-                        <th>Title</th>
-                        <th>Amount</th>
-                        <th>Source</th>
-                        <th>Status</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody id="entriesTableBody">
-                    <!-- Entries will be populated here -->
-                </tbody>
-            </table>
-        </div>
+    <!-- Total summary -->
+    <div id="totalSummary" class="total" style="margin-top: 20px;">
+        <p>Total Air: <span id="totalAir">0</span></p>
+        <p>Total Sea: <span id="totalSea">0</span></p>
+        <p>Total Land: <span id="totalLand">0</span></p>
+        <p>Total Gross Weight: <span id="totalWeight">0</span> kg</p>
     </div>
-    
-    <script src="./script.js"></script>
-</body>
 
+    <!-- Navigation Buttons -->
+    
+    <button id="clearButton" onclick="clearData()">Clear Data</button>
+    <button id="exportButton" onclick="exportToExcel()">Export to Excel</button>
+    <button id="exportWhatsappButton" onclick="exportToWhatsapp()">Export to WhatsApp</button>
+
+    <script>
+        document.getElementById("boxInputs").innerHTML = ''; // Clear the form
+
+        let currentBoxIndex = 0; // Track the current box input
+        let boxData = []; // Array to store box data
+
+        // Function to start box input based on the number entered
+        function startBoxInput() {
+            const numBoxes = parseInt(document.getElementById("numBoxes").value);
+            boxData = [];
+            currentBoxIndex = 0; // Reset index to start from the first box
+            document.getElementById("boxInputs").innerHTML = ""; // Clear previous inputs
+            document.getElementById("saveNextButton").disabled = false; // Enable the save/next button
+
+            // Create the input form for the first box
+            createBoxInputForm();
+        }
+
+        // Function to create the form for the current box
+        function createBoxInputForm() {
+            const boxInputsDiv = document.getElementById("boxInputs");
+
+            // Create dynamic input form for the current box
+            boxInputsDiv.innerHTML = `
+                <h3>Box ${currentBoxIndex + 1}</h3>
+                <label for="length${currentBoxIndex}">Length (cm):</label>
+                <input type="number" id="length${currentBoxIndex}" class="boxInput" min="0" step="0.01" placeholder="Length">
+                <label for="width${currentBoxIndex}">Width (cm):</label>
+                <input type="number" id="width${currentBoxIndex}" class="boxInput" min="0" step="0.01" placeholder="Width">
+                <label for="height${currentBoxIndex}">Height (cm):</label>
+                <input type="number" id="height${currentBoxIndex}" class="boxInput" min="0" step="0.01" placeholder="Height">
+                <label for="weight${currentBoxIndex}">Weight (kg):</label>
+                <input type="number" id="weight${currentBoxIndex}" class="boxInput" min="0" step="0.01" placeholder="Weight">
+            `;
+        }
+
+        // Function to save current box data and move to the next
+        function saveAndNext() {
+    const length = parseFloat(document.getElementById(`length${currentBoxIndex}`).value);
+    const width = parseFloat(document.getElementById(`width${currentBoxIndex}`).value);
+    const height = parseFloat(document.getElementById(`height${currentBoxIndex}`).value);
+    const weight = parseFloat(document.getElementById(`weight${currentBoxIndex}`).value);
+
+    if (isNaN(length) || isNaN(width) || isNaN(height) || isNaN(weight)) {
+        alert(`Please fill out all fields for Box ${currentBoxIndex + 1}`);
+        return;
+    }
+
+    // Calculate volume (m³)
+    const volume = (length * width * height) / 1000000;
+
+    // Assuming some shipping cost calculations
+    const airCost = (length * width * height) / 6000;
+    const seaCost = (length * width * height) / 5000;
+    const landCost = (length * width * height) / 4000;
+
+    // Store the box data
+    boxData.push({ length, width, height, weight, volume, airCost, seaCost, landCost });
+
+    // Update the table
+    updateTable();
+
+    // Check if we've reached the maximum number of boxes
+    const numBoxes = parseInt(document.getElementById("numBoxes").value);
+    if (currentBoxIndex < numBoxes - 1) {
+        currentBoxIndex++;
+        createBoxInputForm(); // Load the next box input
+    } else {
+        // Disable Save/Next button when all boxes are entered
+        document.getElementById("saveNextButton").disabled = true;
+
+        // After saving the last box, reset the boxInputs section
+        document.getElementById("boxInputs").innerHTML = ''; // Clear the form
+    }
+}
+
+
+        // Function to update the table with saved box data
+        function updateTable() {
+            const tableBody = document.getElementById("boxTable").getElementsByTagName("tbody")[0];
+            tableBody.innerHTML = '';
+
+            let totalAir = 0, totalSea = 0, totalLand = 0, totalWeight = 0;
+
+            boxData.forEach((box, index) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${box.length}</td>
+                    <td>${box.width}</td>
+                    <td>${box.height}</td>
+                    <td>${box.weight}</td>
+                    <td>${box.volume.toFixed(2)}</td>
+                    <td>${box.airCost.toFixed(2)}</td>
+                    <td>${box.seaCost.toFixed(2)}</td>
+                    <td>${box.landCost.toFixed(2)}</td>
+                `;
+
+                totalAir += box.airCost;
+                totalSea += box.seaCost;
+                totalLand += box.landCost;
+                totalWeight += box.weight;
+            });
+
+            document.getElementById("totalAir").textContent = totalAir.toFixed(2);
+            document.getElementById("totalSea").textContent = totalSea.toFixed(2);
+            document.getElementById("totalLand").textContent = totalLand.toFixed(2);
+            document.getElementById("totalWeight").textContent = totalWeight.toFixed(2);
+        }
+
+        // Function to export the data to Excel
+        function exportToExcel() {
+            const table = document.getElementById("boxTable");
+            const workbook = XLSX.utils.table_to_book(table, { sheet: "Sheet 1" });
+
+            // Add the totals to the summary section
+            const summary = [
+                ['Total Air', ''],
+                ['Total Sea', ''],
+                ['Total Land', ''],
+                ['Total Gross Weight', '']
+            ];
+
+            const summarySheet = XLSX.utils.aoa_to_sheet(summary);
+            XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
+
+            // Export the workbook
+            XLSX.writeFile(workbook, "Box_Volume_and_Shipping_Calculator.xlsx");
+        }
+
+        // Function to clear all data
+        function clearData() {
+            document.getElementById("numBoxes").value = 1;
+            document.getElementById("invoiceTitle").value = "";
+            document.getElementById("boxInputs").innerHTML = "";
+            document.getElementById("boxTable").getElementsByTagName("tbody")[0].innerHTML = "";
+            document.getElementById("totalAir").textContent = "0";
+            document.getElementById("totalSea").textContent = "0";
+            document.getElementById("totalLand").textContent = "0";
+            document.getElementById("totalWeight").textContent = "0";
+            boxData = [];
+            currentBoxIndex = 0;
+
+            // Reset buttons
+            document.getElementById("saveNextButton").disabled = false;
+        }
+    </script>
+</body>
 </html>
+
