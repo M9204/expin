@@ -1,27 +1,58 @@
 const express = require('express');
+const path = require('path');
 const fs = require('fs');
+const XLSX = require('xlsx');
 const app = express();
-const FILE_PATH = './data.json';
 
-app.use(express.static('public'));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/data', (req, res) => {
-  fs.readFile(FILE_PATH, 'utf8', (err, data) => {
-    if (err) return res.json([]);
+const dataFilePath = path.join(__dirname, 'data.json');
+
+// Get data
+app.get('/api/data', (req, res) => {
+  fs.readFile(dataFilePath, 'utf8', (err, data) => {
+    if (err && err.code === 'ENOENT') {
+      return res.json([]);
+    } else if (err) {
+      return res.status(500).send('Error reading data');
+    }
     res.json(JSON.parse(data));
   });
 });
 
-app.post('/data', (req, res) => {
-  fs.writeFile(FILE_PATH, JSON.stringify(req.body, null, 2), () => {
-    res.sendStatus(200);
+// Save or overwrite data
+app.post('/api/data', (req, res) => {
+  fs.writeFile(dataFilePath, JSON.stringify(req.body, null, 2), 'utf8', (err) => {
+    if (err) return res.status(500).send('Error writing data');
+    res.status(200).send('Data saved successfully');
   });
 });
 
-app.post('/reset', (req, res) => {
-  fs.writeFile(FILE_PATH, '[]', () => res.sendStatus(200));
+// Export data as Excel
+app.get('/api/export/:title', (req, res) => {
+  fs.readFile(dataFilePath, 'utf8', (err, data) => {
+    if (err) return res.status(500).send('Error reading data');
+    const jsonData = JSON.parse(data);
+    const worksheet = XLSX.utils.json_to_sheet(jsonData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Invoice');
+
+    const filename = `${req.params.title || 'Invoice'}.xlsx`;
+    const filepath = path.join(__dirname, filename);
+    XLSX.writeFile(workbook, filepath);
+
+    res.download(filepath, filename, () => {
+      fs.unlinkSync(filepath); // Clean up file after download
+    });
+  });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});

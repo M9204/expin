@@ -12,7 +12,8 @@
     "@fastify/formbody": "^7.4.0",
     "@fastify/static": "^6.10.2",
     "@fastify/view": "^8.0.0",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "xlsx": "^0.18.5"
   },
   "engines": {
     "node": "14.x"
