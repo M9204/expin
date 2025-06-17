@@ -1,255 +1,144 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Box Volume and Shipping Calculator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-    }
-
-    input, button {
-      padding: 10px;
-      margin: 5px 0;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    button {
-      font-size: 16px;
-      cursor: pointer;
-      background: #4CAF50;
-      color: white;
-      border: none;
-    }
-
-    button:hover {
-      background: #45a049;
-    }
-
-    #clearButton, #exportButton {
-      background-color: #f44336;
-    }
-
-    #clearButton:hover, #exportButton:hover {
-      background-color: #e53935;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    table, th, td {
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-
-    th, td {
-      padding: 10px;
-    }
-
-    th {
-      background-color: #f4f4f4;
-    }
-
-    td[contenteditable] {
-      background-color: #fffde7;
-    }
-
-    .total {
-      margin-top: 20px;
-      font-weight: bold;
-    }
-
-    @media (max-width: 600px) {
-      table, input, button {
-        font-size: 14px;
-      }
-    }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Shipping Calculator</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.full.min.js"></script>
+    <stylesrc='style.css' ></stylesrc></style>
 </head>
 <body>
-  <div class="container">
-    <h1>Box Volume and Shipping Calculator</h1>
-
-    <label for="invoiceTitle">Invoice Title:</label>
-    <input type="text" id="invoiceTitle" placeholder="Enter title" />
-
-    <h3>Add Box</h3>
-    <input type="number" id="length" placeholder="Length (cm)" min="0" step="0.01" />
-    <input type="number" id="width" placeholder="Width (cm)" min="0" step="0.01" />
-    <input type="number" id="height" placeholder="Height (cm)" min="0" step="0.01" />
-    <input type="number" id="weight" placeholder="Gross Weight (kg)" min="0" step="0.01" />
+    <h2>Shipping Calculator</h2>
+    <input type="text" id="invoiceTitle" placeholder="Invoice Title">
     <button onclick="addBox()">Add Box</button>
+    <button onclick="exportToExcel()">Export to Excel</button>
+    <button onclick="clearData()">Clear All</button>
 
     <table id="boxTable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th contenteditable="false">L (cm)</th>
-          <th contenteditable="false">W (cm)</th>
-          <th contenteditable="false">H (cm)</th>
-          <th contenteditable="false">Gross Wt (kg)</th>
-          <th>Volume (m³)</th>
-          <th>Air</th>
-          <th>Sea</th>
-          <th>Land</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Length (cm)</th>
+                <th>Width (cm)</th>
+                <th>Height (cm)</th>
+                <th>Weight (kg)</th>
+                <th>Volume (m³)</th>
+                <th>Air Cost</th>
+                <th>Sea Cost</th>
+                <th>Land Cost</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+            <tr>
+                <td colspan="6"><strong>Totals</strong></td>
+                <td id="totalAir">0</td>
+                <td id="totalSea">0</td>
+                <td id="totalLand">0</td>
+            </tr>
+            <tr>
+                <td colspan="8"><strong>Total Gross Weight:</strong></td>
+                <td id="totalWeight">0</td>
+            </tr>
+        </tfoot>
     </table>
 
-    <div class="total">
-      <p>Total Air: <span id="totalAir">0</span></p>
-      <p>Total Sea: <span id="totalSea">0</span></p>
-      <p>Total Land: <span id="totalLand">0</span></p>
-      <p>Total Gross Weight: <span id="totalWeight">0</span> kg</p>
-    </div>
+    <script>
+        let boxData = [];
 
-    <button id="exportButton" onclick="exportToExcel()">Export to Excel</button>
-    <button id="clearButton" onclick="clearAll()">Clear All</button>
-  </div>
+        function addBox() {
+            boxData.push({ length: 0, width: 0, height: 0, weight: 0, volume: 0, airCost: 0, seaCost: 0, landCost: 0 });
+            updateTable();
+        }
 
-  <script>
-    let boxData = JSON.parse(localStorage.getItem("boxData") || "[]");
+        function editBox(index, field, value) {
+            const num = parseFloat(value);
+            if (!isNaN(num)) {
+                boxData[index][field] = num;
+                const { length, width, height, weight } = boxData[index];
+                const volume = (length * width * height) / 1e6;
+                boxData[index].volume = volume;
+                boxData[index].airCost = (length * width * height) / 6000;
+                boxData[index].seaCost = (length * width * height) / 5000;
+                boxData[index].landCost = (length * width * height) / 4000;
+                updateTable();
+            }
+        }
 
-    function saveToLocalStorage() {
-      localStorage.setItem("boxData", JSON.stringify(boxData));
-    }
+        function updateTable() {
+            const tableBody = document.getElementById("boxTable").querySelector("tbody");
+            tableBody.innerHTML = "";
+            let totalAir = 0, totalSea = 0, totalLand = 0, totalWeight = 0;
+            boxData.forEach((box, i) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td contenteditable oninput="editBox(${i}, 'length', this.innerText)">${box.length}</td>
+                    <td contenteditable oninput="editBox(${i}, 'width', this.innerText)">${box.width}</td>
+                    <td contenteditable oninput="editBox(${i}, 'height', this.innerText)">${box.height}</td>
+                    <td contenteditable oninput="editBox(${i}, 'weight', this.innerText)">${box.weight}</td>
+                    <td>${box.volume.toFixed(2)}</td>
+                    <td>${box.airCost.toFixed(2)}</td>
+                    <td>${box.seaCost.toFixed(2)}</td>
+                    <td>${box.landCost.toFixed(2)}</td>
+                `;
+                totalAir += box.airCost;
+                totalSea += box.seaCost;
+                totalLand += box.landCost;
+                totalWeight += box.weight;
+            });
+            document.getElementById("totalAir").textContent = totalAir.toFixed(2);
+            document.getElementById("totalSea").textContent = totalSea.toFixed(2);
+            document.getElementById("totalLand").textContent = totalLand.toFixed(2);
+            document.getElementById("totalWeight").textContent = totalWeight.toFixed(2);
+            saveData();
+        }
 
-    function updateTable() {
-      const tbody = document.querySelector("#boxTable tbody");
-      tbody.innerHTML = "";
+        function saveData() {
+            fetch('/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(boxData)
+            });
+        }
 
-      let totalAir = 0, totalSea = 0, totalLand = 0, totalWeight = 0;
+        function loadData() {
+            fetch('/data')
+                .then(res => res.json())
+                .then(data => {
+                    boxData = data;
+                    updateTable();
+                });
+        }
 
-      boxData.forEach((box, index) => {
-        const row = tbody.insertRow();
-        row.innerHTML = `
-          <td>${index + 1}</td>
-          <td contenteditable="true" oninput="cellEdit(${index}, 'length', this.innerText)">${box.length}</td>
-          <td contenteditable="true" oninput="cellEdit(${index}, 'width', this.innerText)">${box.width}</td>
-          <td contenteditable="true" oninput="cellEdit(${index}, 'height', this.innerText)">${box.height}</td>
-          <td contenteditable="true" oninput="cellEdit(${index}, 'weight', this.innerText)">${box.weight}</td>
-          <td>${box.volume.toFixed(3)}</td>
-          <td>${box.airCost.toFixed(2)}</td>
-          <td>${box.seaCost.toFixed(2)}</td>
-          <td>${box.landCost.toFixed(2)}</td>
-        `;
-        totalAir += box.airCost;
-        totalSea += box.seaCost;
-        totalLand += box.landCost;
-        totalWeight += box.weight;
-      });
+        function clearData() {
+            fetch('/reset', { method: 'POST' })
+                .then(() => {
+                    boxData = [];
+                    document.getElementById("invoiceTitle").value = "";
+                    updateTable();
+                });
+        }
 
-      document.getElementById("totalAir").textContent = totalAir.toFixed(2);
-      document.getElementById("totalSea").textContent = totalSea.toFixed(2);
-      document.getElementById("totalLand").textContent = totalLand.toFixed(2);
-      document.getElementById("totalWeight").textContent = totalWeight.toFixed(2);
-    }
+        function exportToExcel() {
+            const title = document.getElementById("invoiceTitle").value.trim();
+            if (!boxData.length || !title) {
+                alert("Please enter invoice title and add at least one box");
+                return;
+            }
+            const table = document.getElementById("boxTable");
+            const workbook = XLSX.utils.table_to_book(table, { sheet: "Boxes" });
+            const summary = [
+                ['Total Air', document.getElementById("totalAir").textContent],
+                ['Total Sea', document.getElementById("totalSea").textContent],
+                ['Total Land', document.getElementById("totalLand").textContent],
+                ['Total Gross Weight', document.getElementById("totalWeight").textContent + " kg"]
+            ];
+            const summarySheet = XLSX.utils.aoa_to_sheet(summary);
+            XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
+            XLSX.writeFile(workbook, `${title.replace(/\s+/g, "_")}.xlsx`);
+        }
 
-    function cellEdit(index, key, value) {
-      const num = parseFloat(value);
-      if (isNaN(num)) return;
-
-      boxData[index][key] = num;
-
-      const { length, width, height, weight } = boxData[index];
-      const volume = (length * width * height) / 1000000;
-      boxData[index].volume = volume;
-      boxData[index].airCost = (length * width * height) / 6000;
-      boxData[index].seaCost = (length * width * height) / 5000;
-      boxData[index].landCost = (length * width * height) / 4000;
-      boxData[index].weight = weight;
-
-      saveToLocalStorage();
-      updateTable();
-    }
-
-    function addBox() {
-      const length = parseFloat(document.getElementById("length").value);
-      const width = parseFloat(document.getElementById("width").value);
-      const height = parseFloat(document.getElementById("height").value);
-      const weight = parseFloat(document.getElementById("weight").value);
-
-      if ([length, width, height, weight].some(isNaN)) {
-        alert("Please fill in all fields with valid numbers.");
-        return;
-      }
-
-      const volume = (length * width * height) / 1000000;
-      const airCost = (length * width * height) / 6000;
-      const seaCost = (length * width * height) / 5000;
-      const landCost = (length * width * height) / 4000;
-
-      boxData.push({ length, width, height, weight, volume, airCost, seaCost, landCost });
-      saveToLocalStorage();
-      updateTable();
-
-      // Clear inputs
-      ["length", "width", "height", "weight"].forEach(id => document.getElementById(id).value = "");
-    }
-
-    function exportToExcel() {
-      const invoiceTitle = document.getElementById("invoiceTitle").value.trim() || "Invoice";
-      if (!boxData.length) {
-        alert("No data to export.");
-        return;
-      }
-
-      const wsData = [
-        ["#", "L (cm)", "W (cm)", "H (cm)", "Gross Wt (kg)", "Volume (m³)", "Air", "Sea", "Land"]
-      ];
-
-      boxData.forEach((box, i) => {
-        wsData.push([
-          i + 1,
-          box.length,
-          box.width,
-          box.height,
-          box.weight,
-          box.volume.toFixed(3),
-          box.airCost.toFixed(2),
-          box.seaCost.toFixed(2),
-          box.landCost.toFixed(2),
-        ]);
-      });
-
-      wsData.push([]);
-      wsData.push(["Totals", "", "", "", document.getElementById("totalWeight").textContent,
-        "", document.getElementById("totalAir").textContent,
-        document.getElementById("totalSea").textContent,
-        document.getElementById("totalLand").textContent
-      ]);
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Box Data");
-
-      XLSX.writeFile(wb, `${invoiceTitle.replace(/\s+/g, "_")}.xlsx`);
-    }
-
-    function clearAll() {
-      if (confirm("Are you sure you want to clear all data and create a new file?")) {
-        boxData = [];
-        localStorage.removeItem("boxData");
-        updateTable();
-        document.getElementById("invoiceTitle").value = "";
-      }
-    }
-
-    // Load saved data
-    window.onload = updateTable;
-  </script>
+        window.onload = loadData;
+    </script>
 </body>
 </html>
