@@ -215,6 +215,21 @@
       tbody.appendChild(row);
     });
   }
+  function recalcTotals() {
+  let totalAir = 0, totalSea = 0, totalLand = 0, totalWeight = 0;
+
+  boxData.forEach(box => {
+    totalAir += box.airCost || 0;
+    totalSea += box.seaCost || 0;
+    totalLand += box.landCost || 0;
+    totalWeight += box.weight && !isNaN(box.weight) ? box.weight : 0;
+  });
+
+  document.getElementById('totalAir').textContent = totalAir.toFixed(2);
+  document.getElementById('totalSea').textContent = totalSea.toFixed(2);
+  document.getElementById('totalLand').textContent = totalLand.toFixed(2);
+  document.getElementById('totalWeight').textContent = totalWeight.toFixed(2);
+}
 
   // Handle edits on editable cells
   function onCellEdit(e) {
