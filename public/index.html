@@ -394,6 +394,37 @@
     document.getElementById('invoiceTitle').value = '';
     renderTable();
     recalcTotals();
+    function saveToServer() {
+  // Send current boxData to the backend
+  fetch('/api/data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      id: Date.now().toString(), // optional, could be more advanced
+      timestamp: new Date().toISOString(),
+      boxes: boxData,  // the actual payload
+      totalAir: parseFloat(document.getElementById('totalAir').textContent),
+      totalSea: parseFloat(document.getElementById('totalSea').textContent),
+      totalLand: parseFloat(document.getElementById('totalLand').textContent),
+      totalWeight: parseFloat(document.getElementById('totalWeight').textContent),
+      status: "draft"  // optional field
+    })
+  })
+  .then(res => {
+    if (res.ok) {
+      alert("Data saved successfully to server!");
+    } else {
+      throw new Error("Server error");
+    }
+  })
+  .catch(err => {
+    console.error("Failed to save:", err);
+    alert("Failed to save data.");
+  });
+}
+
   }
 </script>
 </body>
