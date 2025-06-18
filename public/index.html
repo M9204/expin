@@ -269,21 +269,36 @@
   }
 
   // Recalculate totals and update summary
-  function recalcTotals() {
-    let totalAir = 0, totalSea = 0, totalLand = 0, totalWeight = 0;
+  function recalcRow(index) {
+    const box = boxData[index];
+    const l = parseFloat(box.length);
+    const w = parseFloat(box.width);
+    const h = parseFloat(box.height);
+    const weight = parseFloat(box.weight);
 
-    boxData.forEach(box => {
-      totalAir += box.airCost || 0;
-      totalSea += box.seaCost || 0;
-      totalLand += box.landCost || 0;
-      totalWeight += box.weight && !isNaN(box.weight) ? box.weight : 0;
-    });
+    if ([l, w, h, weight].some(v => isNaN(v))) {
+      box.volume = 0;
+      box.airCost = 0;
+      box.seaCost = 0;
+      box.landCost = 0;
+    } else {
+      box.volume = (l * w * h) / 1000000;
+      box.airCost = (l * w * h) / 6000;
+      box.seaCost = (l * w * h) / 5000;
+      box.landCost = (l * w * h) / 4000;
+    }
 
-    document.getElementById('totalAir').textContent = totalAir.toFixed(2);
-    document.getElementById('totalSea').textContent = totalSea.toFixed(2);
-    document.getElementById('totalLand').textContent = totalLand.toFixed(2);
-    document.getElementById('totalWeight').textContent = totalWeight.toFixed(2);
-  }
+    const row = document.querySelector(`#boxTable tbody`).children[index];
+    if (!row) return;
+
+    row.children[5].textContent = box.volume ? box.volume.toFixed(2) : '0.00';
+    row.children[6].textContent = box.airCost ? box.airCost.toFixed(2) : '0.00';
+    row.children[7].textContent = box.seaCost ? box.seaCost.toFixed(2) : '0.00';
+    row.children[8].textContent = box.landCost ? box.landCost.toFixed(2) : '0.00';
+    recalcTotals();
+    
+}
+
 
   // Save data and title to localStorage
   function saveData() {
