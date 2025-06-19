@@ -250,6 +250,10 @@ td[contenteditable="true"] {
 
 <div class="container">
   <h1>Box Volume and Shipping Calculator</h1>
+<label for="invoiceSelect">Select Invoice:</label>
+<select id="invoiceSelect" onchange="onInvoiceChange()">
+  <option value="">➕ New Invoice</option>
+</select>
 
   <label for="invoiceTitle">Invoice Title:</label>
   <input type="text" id="invoiceTitle" placeholder="Enter title" />
@@ -296,20 +300,28 @@ td[contenteditable="true"] {
   // Load saved data from localStorage on page load
   window.onload = () => {
   fetch('/data.json')
-    .then(res => {
-      if (!res.ok) throw new Error("Failed to load data.json from server.");
-      return res.json();
-    })
+    .then(res => res.json())
     .then(serverData => {
-      boxData = serverData.boxes || [];
-      document.getElementById('invoiceTitle').value = serverData.title || '';
-      renderTable();
-      recalcTotals();
+      if (serverData.invoices) {
+        populateInvoiceList(Object.keys(serverData.invoices));
+        // Optionally load a default invoice
+      }
     })
-    .catch(err => {
-      console.error("Error loading server data:", err);
-    });
+    .catch(err => console.error("Error loading server data:", err));
 };
+
+function populateInvoiceList(titles) {
+  const select = document.getElementById('invoiceSelect');
+  // Clear existing (except "New Invoice")
+  select.innerHTML = '<option value="">➕ New Invoice</option>';
+  titles.forEach(title => {
+    const option = document.createElement('option');
+    option.value = title;
+    option.textContent = title;
+    select.appendChild(option);
+  });
+}
+
   
 
   // Add a new empty box row
