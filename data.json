@@ -1,41 +1,21 @@
 {
-  "title": "test2",
-  "timestamp": "2025-06-19T09:38:33.736Z",
+  "title": "kk",
+  "timestamp": "2025-06-19T10:03:29.845Z",
   "boxes": [
     {
-      "length": 50,
+      "length": 505,
       "width": 50,
       "height": 50,
       "weight": 5,
-      "volume": 0.125,
-      "airCost": 20.833333333333332,
-      "seaCost": 25,
-      "landCost": 31.25
-    },
-    {
-      "length": 45,
-      "width": 45,
-      "height": 45,
-      "weight": 45,
-      "volume": 0.091125,
-      "airCost": 15.1875,
-      "seaCost": 18.225,
-      "landCost": 22.78125
-    },
-    {
-      "length": 50,
-      "width": 50,
-      "height": 50,
-      "weight": 6,
-      "volume": 0.125,
-      "airCost": 20.833333333333332,
-      "seaCost": 25,
-      "landCost": 31.25
+      "volume": 1.2625,
+      "airCost": 210.41666666666666,
+      "seaCost": 252.5,
+      "landCost": 315.625
     }
   ],
-  "totalAir": 56.85,
-  "totalSea": 68.22,
-  "totalLand": 85.28,
-  "totalWeight": 56,
+  "totalAir": 210.42,
+  "totalSea": 252.5,
+  "totalLand": 315.63,
+  "totalWeight": 5,
   "status": "draft"
 }

@@ -425,18 +425,30 @@ fetch('/api/export', {
 .catch(err => console.error("Export failed:", err));
 
 
-  // Clear all data and localStorage, create new empty data
   function clearData() {
-    if (!confirm("Are you sure you want to clear all data? This action cannot be undone.")) return;
+  if (!confirm("Are you sure you want to clear all data? This action cannot be undone.")) return;
 
-    boxData = [];
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(INVOICE_TITLE_KEY);
-    document.getElementById('invoiceTitle').value = '';
-    renderTable();
-    recalcTotals();
-    
-  }
+  boxData = [];
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(INVOICE_TITLE_KEY);
+  document.getElementById('invoiceTitle').value = '';
+  renderTable();
+  recalcTotals();
+
+  // Send request to clear data.json on the server
+  fetch('/api/clear', {
+    method: 'POST'
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("Server data cleared:", data.message);
+  })
+  .catch(err => {
+    console.error("Failed to clear server data:", err);
+    alert("Warning: Could not clear server data.");
+  });
+}
+
   
     function saveToServer() {
   // Send current boxData to the backend
@@ -469,7 +481,7 @@ fetch('/api/export', {
   });
 }
 
-  }
+  
 </script>
   
 </body>

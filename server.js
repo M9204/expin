@@ -62,15 +62,17 @@ app.post("/api/export", (req, res) => {
     });
   });
 });
-
+const DATA_PATH = path.join(__dirname, "data.json");
 // Clear the data.json file
 app.post("/api/clear", (req, res) => {
   fs.writeFile(DATA_PATH, JSON.stringify([], null, 2), err => {
-    if (err) return res.status(500).json({ error: "Failed to clear data.json." });
+    if (err) {
+      console.error("Failed to clear file:", err);
+      return res.status(500).json({ error: "Failed to clear data.json." });
+    }
     res.json({ message: "Server data cleared." });
   });
 });
-
 
 
 // Start server
