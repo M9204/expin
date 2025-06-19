@@ -1,6 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,6 +9,7 @@ const DATA_FILE = path.join(__dirname, "data.json");
 
 app.use(express.static("public"));
 app.use(express.json());
+app.use(cors());
 
 // Ensure data.json exists
 if (!fs.existsSync(DATA_FILE)) {

@@ -328,6 +328,7 @@
   // Also send to server
   fetch('/api/data', {
     method: 'POST',
+    mode: 'cors', 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       title: document.getElementById('invoiceTitle').value.trim(),
@@ -408,6 +409,7 @@
   // Also send export data to backend
 fetch('/api/export', {
   method: 'POST',
+  mode: 'cors', 
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     title: invoiceTitle,
@@ -442,7 +444,8 @@ fetch('/api/export', {
 
   // Send request to clear data.json on the server
   fetch('/api/clear', {
-    method: 'POST'
+    method: 'POST',
+    mode: 'cors', 
   })
   .then(res => res.json())
   .then(data => {
@@ -459,6 +462,7 @@ fetch('/api/export', {
   // Send current boxData to the backend
   fetch('/api/data', {
     method: 'POST',
+    mode: 'cors', 
     headers: {
       'Content-Type': 'application/json'
     },
