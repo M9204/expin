@@ -78,7 +78,7 @@
     input[type="text"], input[type="number"] { padding: 12px; }
   }
   td[contenteditable="true"] {
-    background-color: #fff9c4;  Light yellow background for editable cells */
+    background-color: #fff9c4;  Light yellow background for editable cells 
     outline: none;
   }
   td input[type="number"] {
@@ -250,12 +250,11 @@ td[contenteditable="true"] {
 
 <div class="container">
   <h1>Box Volume and Shipping Calculator</h1>
-  <select id="invoiceSelector" onchange="loadSelectedInvoice()">
-  <option value="">-- Select Saved Invoice --</option>
-  </select>
+
   <label for="invoiceTitle">Invoice Title:</label>
   <input type="text" id="invoiceTitle" placeholder="Enter title" />
   
+
   <button onclick="addRow()">Add Box</button>
 
   <table id="boxTable" aria-label="Boxes data table">
@@ -296,47 +295,22 @@ td[contenteditable="true"] {
   let boxData = [];
 
   // Load saved data from localStorage on page load
-  function loadInvoiceList() {
-  fetch('/api/invoices')
-    .then(res => res.json())
-    .then(files => {
-      const selector = document.getElementById('invoiceSelector');
-      files.forEach(file => {
-        const opt = document.createElement('option');
-        opt.value = file;
-        opt.textContent = file.replace(".json", "");
-        selector.appendChild(opt);
-      });
-    })
-    .catch(err => console.error("Failed to fetch invoices:", err));
-}
-
-function loadSelectedInvoice() {
-  const file = document.getElementById('invoiceSelector').value;
-  if (!file) return;
-  fetch(`/api/invoices/${file}`)
-    .then(res => res.json())
-    .then(data => {
-      boxData = data.boxes || [];
-      document.getElementById('invoiceTitle').value = data.title || '';
-      renderTable();
-      recalcTotals();
-    })
-    .catch(err => alert("Failed to load invoice."));
-}
-
-window.onload = () => {
+  window.onload = () => {
   fetch('/data.json')
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("Failed to load data.json from server.");
+      return res.json();
+    })
     .then(serverData => {
       boxData = serverData.boxes || [];
       document.getElementById('invoiceTitle').value = serverData.title || '';
       renderTable();
       recalcTotals();
+    })
+    .catch(err => {
+      console.error("Error loading server data:", err);
     });
-  loadInvoiceList();
 };
-
   
 
   // Add a new empty box row
@@ -533,7 +507,7 @@ window.onload = () => {
       box.landCost = (l * w * h) / 4000;
     }
 
-    const row = document.querySelector(`#boxTable tbody`).children[index];
+    const row = document.querySelector(#boxTable tbody).children[index];
     if (!row) return;
 
     row.children[5].textContent = box.volume ? box.volume.toFixed(2) : '0.00';
