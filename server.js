@@ -1,51 +1,45 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
+// server.js
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+
 const app = express();
+const PORT = 3000;
+const DATA_PATH = path.join(__dirname, "data.json");
 
+app.use(express.static("public")); // serve static files
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-const dataFilePath = path.join(__dirname, 'data.json');
 
 // Ensure data.json exists
-if (!fs.existsSync(dataFilePath)) {
-  fs.writeFileSync(dataFilePath, '[]');
+if (!fs.existsSync(DATA_PATH)) {
+  fs.writeFileSync(DATA_PATH, JSON.stringify([]));
 }
 
-// Retrieve saved boxes
-app.get('/api/data', (req, res) => {
-  fs.readFile(dataFilePath, 'utf8', (err, data) => {
-    if (err) return res.status(500).send('Error reading data');
-    res.json(JSON.parse(data));
+// Save/update data.json
+app.post("/api/data", (req, res) => {
+  const newData = req.body;
+  fs.writeFile(DATA_PATH, JSON.stringify(newData, null, 2), err => {
+    if (err) return res.status(500).json({ error: "Failed to write file." });
+    res.json({ message: "Data saved." });
   });
 });
 
-// Add box or clear all
-app.post('/api/data', (req, res) => {
-  const incoming = req.body;
-  if (incoming.clear) {
-    fs.writeFile(dataFilePath, '[]', err => {
-      if (err) return res.status(500).send('Error clearing data');
-      res.send('Cleared');
+// Export with renamed file
+app.post("/api/export", (req, res) => {
+  const { title, data } = req.body;
+  const sanitizedTitle = title.replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
+  const filename = `${sanitizedTitle}.json`;
+  const exportPath = path.join(__dirname, filename);
+
+  fs.writeFile(exportPath, JSON.stringify(data, null, 2), err => {
+    if (err) return res.status(500).json({ error: "Failed to export." });
+    // Also reset data.json
+    fs.writeFile(DATA_PATH, JSON.stringify([], null, 2), () => {
+      res.json({ message: "Exported and reset." });
     });
-  } else {
-    fs.readFile(dataFilePath, 'utf8', (err, data) => {
-      let arr = [];
-      if (!err) arr = JSON.parse(data || '[]');
-      arr.push(incoming);
-      fs.writeFile(dataFilePath, JSON.stringify(arr, null, 2), err => {
-        if (err) return res.status(500).send('Error saving data');
-        res.send('Saved');
-      });
-    });
-  }
+  });
 });
 
-// Serve UI
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
