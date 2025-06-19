@@ -1,45 +1,79 @@
-// server.js
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
 const app = express();
-const PORT = 3000;
-const DATA_PATH = path.join(__dirname, "data.json");
+const PORT = process.env.PORT || 3000;
+const DATA_FILE = path.join(__dirname, "data.json");
 
-app.use(express.static("public")); // serve static files
+app.use(express.static("public"));
 app.use(express.json());
 
 // Ensure data.json exists
-if (!fs.existsSync(DATA_PATH)) {
-  fs.writeFileSync(DATA_PATH, JSON.stringify([]));
+if (!fs.existsSync(DATA_FILE)) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
 }
 
-// Save/update data.json
+// Save incoming box data to data.json
 app.post("/api/data", (req, res) => {
-  const newData = req.body;
-  fs.writeFile(DATA_PATH, JSON.stringify(newData, null, 2), err => {
-    if (err) return res.status(500).json({ error: "Failed to write file." });
-    res.json({ message: "Data saved." });
+  const body = req.body;
+  if (!body || typeof body !== "object") {
+    return res.status(400).json({ error: "Invalid data format." });
+  }
+
+  fs.writeFile(DATA_FILE, JSON.stringify(body, null, 2), err => {
+    if (err) {
+      console.error("Failed to write data:", err);
+      return res.status(500).json({ error: "Failed to save data." });
+    }
+    res.json({ message: "Data saved successfully." });
   });
 });
 
-// Export with renamed file
 app.post("/api/export", (req, res) => {
   const { title, data } = req.body;
-  const sanitizedTitle = title.replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
-  const filename = `${sanitizedTitle}.json`;
-  const exportPath = path.join(__dirname, filename);
 
-  fs.writeFile(exportPath, JSON.stringify(data, null, 2), err => {
-    if (err) return res.status(500).json({ error: "Failed to export." });
-    // Also reset data.json
-    fs.writeFile(DATA_PATH, JSON.stringify([], null, 2), () => {
-      res.json({ message: "Exported and reset." });
+  // Validate title
+  if (typeof title !== 'string' || !title.trim()) {
+    return res.status(400).json({ error: "Invalid or missing title." });
+  }
+  if (!data || typeof data !== 'object') {
+    return res.status(400).json({ error: "Invalid or missing data." });
+  }
+
+  const sanitizedTitle = title.trim().replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
+  const exportFilename = `${sanitizedTitle}.json`;
+  const exportPath = path.join(__dirname, exportFilename);
+  const currentDataPath = path.join(__dirname, "data.json");
+
+  // Create the file if it doesn't exist
+  if (!fs.existsSync(currentDataPath)) {
+    fs.writeFileSync(currentDataPath, JSON.stringify([]));
+  }
+
+  // Move old file and reset
+  fs.rename(currentDataPath, exportPath, err => {
+    if (err) return res.status(500).json({ error: "Failed to rename file.", details: err });
+
+    fs.writeFile(currentDataPath, JSON.stringify([], null, 2), err2 => {
+      if (err2) return res.status(500).json({ error: "Failed to reset data.json.", details: err2 });
+
+      res.json({ message: `Exported as ${exportFilename} and reset data.json.` });
     });
   });
 });
 
+// Clear the data.json file
+app.post("/api/clear", (req, res) => {
+  fs.writeFile(DATA_PATH, JSON.stringify([], null, 2), err => {
+    if (err) return res.status(500).json({ error: "Failed to clear data.json." });
+    res.json({ message: "Server data cleared." });
+  });
+});
+
+
+
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
