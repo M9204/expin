@@ -253,6 +253,10 @@ td[contenteditable="true"] {
 
   <label for="invoiceTitle">Invoice Title:</label>
   <input type="text" id="invoiceTitle" placeholder="Enter title" />
+  <label for="invoiceList">Load Existing Invoice:</label>
+  <select id="invoiceList" onchange="loadInvoiceByTitle(this.value)">
+    <option value="">-- Select Invoice --</option>
+  </select>
 
   <button onclick="addRow()">Add Box</button>
 
@@ -293,7 +297,7 @@ td[contenteditable="true"] {
   // Box data array
   let boxData = [];
 
-  // Load saved data from localStorage on page load
+  /*/ Load saved data from localStorage on page load
   window.onload = () => {
   fetch('/data.json')
     .then(res => {
@@ -309,8 +313,51 @@ td[contenteditable="true"] {
     .catch(err => {
       console.error("Error loading server data:", err);
     });
+};*/
+  window.onload = () => {
+  fetch('/data.json')
+    .then(res => res.json())
+    .then(serverData => {
+      // Populate invoice list
+      const invoiceList = document.getElementById('invoiceList');
+      for (const title in serverData) {
+        const option = document.createElement('option');
+        option.value = title;
+        option.textContent = title;
+        invoiceList.appendChild(option);
+      }
+
+      // Optionally, load the first invoice or leave blank
+      const firstTitle = Object.keys(serverData)[0];
+      if (firstTitle) {
+        loadInvoiceByTitle(firstTitle);
+        document.getElementById('invoiceList').value = firstTitle;
+      }
+    })
+    .catch(err => console.error("Error loading invoices:", err));
 };
-  
+
+function loadInvoiceByTitle(title) {
+  if (!title) return;
+
+  fetch('/data.json')
+    .then(res => res.json())
+    .then(serverData => {
+      if (!serverData[title]) {
+        alert("Invoice not found.");
+        return;
+      }
+
+      document.getElementById('invoiceTitle').value = title;
+      boxData = serverData[title].boxes || [];
+      renderTable();
+      recalcTotals();
+    })
+    .catch(err => {
+      console.error("Failed to load invoice:", err);
+      alert("Could not load invoice data.");
+    });
+}
 
   // Add a new empty box row
   function addRow() {
