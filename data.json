@@ -1,21 +1,31 @@
 {
-  "title": "",
-  "timestamp": "2025-06-19T10:37:25.178Z",
+  "title": "Sfavefe",
+  "timestamp": "2025-06-19T10:47:43.854Z",
   "boxes": [
     {
-      "length": 50,
+      "length": 12,
+      "width": 121,
+      "height": 12,
+      "weight": 5,
+      "volume": 0.017424,
+      "airCost": 2.904,
+      "seaCost": 3.4848,
+      "landCost": 4.356
+    },
+    {
+      "length": 20,
       "width": 50,
       "height": 50,
-      "weight": 500,
-      "volume": 0.125,
-      "airCost": 20.833333333333332,
-      "seaCost": 25,
-      "landCost": 31.25
+      "weight": 80,
+      "volume": 0.05,
+      "airCost": 8.333333333333334,
+      "seaCost": 10,
+      "landCost": 12.5
     }
   ],
-  "totalAir": 20.83,
-  "totalSea": 25,
-  "totalLand": 31.25,
-  "totalWeight": 500,
+  "totalAir": 11.24,
+  "totalSea": 13.48,
+  "totalLand": 16.86,
+  "totalWeight": 85,
   "status": "draft"
 }

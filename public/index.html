@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Box Volume and Shipping Calculator</title>
 <style>
+  /*
   body {
     font-family: Arial, sans-serif;
     margin: 20px;
@@ -77,9 +78,171 @@
     input[type="text"], input[type="number"] { padding: 12px; }
   }
   td[contenteditable="true"] {
-    background-color: #fff9c4; /* Light yellow background for editable cells */
+    background-color: #fff9c4;  Light yellow background for editable cells */
     outline: none;
   }
+  td input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+*/
+  
+  
+  /* General box-sizing reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  padding: 0;
+  /* box-sizing: border-box; moved to universal above */
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  overflow-x: auto;
+  display: block;
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  padding: 10px;
+  text-align: center;
+  vertical-align: middle; /* Align inputs vertically center */
+  min-width: 60px; /* Ensure cells don't get too narrow */
+}
+
+th {
+  background-color: #f4f4f4;
+}
+
+/* Inputs inside table cells */
+td input[type="number"] {
+  width: 100%;
+  padding: 6px 8px; /* balanced padding */
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline-offset: 2px;
+  /* Prevent input height from collapsing */
+  min-height: 34px;
+  line-height: 1.2;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+/* Focus style for inputs to improve UX */
+td input[type="number"]:focus {
+  border-color: #4CAF50;
+  box-shadow: 0 0 3px #4CAF50;
+  outline: none;
+}
+
+/* Remove vertical margin from inputs to prevent clipping */
+input[type="text"], input[type="number"] {
+  margin: 0;
+  padding: 10px;
+  width: 100%;
+  font-family: inherit;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+/* Buttons */
+button {
+  padding: 12px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+  font-size: 16px;
+  width: 100%;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+#clearButton, #exportButton {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: #f44336;
+  border-radius: 4px;
+}
+
+#clearButton:hover, #exportButton:hover {
+  background-color: #e53935;
+}
+
+.total {
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  body {
+    margin: 10px;
+    font-size: 14px;
+  }
+  table {
+    font-size: 12px;
+    margin-top: 10px;
+  }
+  th, td {
+    padding: 8px;
+  }
+  button {
+    padding: 12px;
+    font-size: 14px;
+  }
+  .total {
+    font-size: 14px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  button {
+    font-size: 18px;
+    padding: 10px;
+  }
+  .total {
+    font-size: 18px;
+  }
+  input[type="text"], input[type="number"] {
+    padding: 12px;
+    font-size: 16px;
+  }
+}
+
+/* Contenteditable cells style if still used */
+td[contenteditable="true"] {
+  background-color: #fff9c4; /* Light yellow background */
+  outline: none;
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
 </head>
