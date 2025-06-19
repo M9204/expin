@@ -132,17 +132,22 @@
 
   // Load saved data from localStorage on page load
   window.onload = () => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    const savedTitle = localStorage.getItem(INVOICE_TITLE_KEY);
-    if (savedData) {
-      boxData = JSON.parse(savedData);
-      if (savedTitle) {
-        document.getElementById('invoiceTitle').value = savedTitle;
-      }
+  fetch('/data.json')
+    .then(res => {
+      if (!res.ok) throw new Error("Failed to load data.json from server.");
+      return res.json();
+    })
+    .then(serverData => {
+      boxData = serverData.boxes || [];
+      document.getElementById('invoiceTitle').value = serverData.title || '';
       renderTable();
       recalcTotals();
-    }
-  };
+    })
+    .catch(err => {
+      console.error("Error loading server data:", err);
+    });
+};
+  
 
   // Add a new empty box row
   function addRow() {

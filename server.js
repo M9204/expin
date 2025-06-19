@@ -74,6 +74,9 @@ app.post("/api/clear", (req, res) => {
   });
 });
 
+app.get("/data.json", (req, res) => {
+  res.sendFile(DATA_PATH); // DATA_PATH is your full path to data.json
+});
 
 // Start server
 app.listen(PORT, () => {
