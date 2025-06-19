@@ -185,7 +185,7 @@
       cellIndex.textContent = i + 1;
       row.appendChild(cellIndex);
 
-      // Editable cells for L, W, H, Weight
+      /*/ Editable cells for L, W, H, Weight
       ['length', 'width', 'height', 'weight'].forEach(key => {
         const cell = document.createElement('td');
         cell.contentEditable = true;
@@ -194,7 +194,42 @@
         cell.textContent = box[key];
         cell.addEventListener('input', onCellEdit);
         row.appendChild(cell);
+      });*/
+      ['length', 'width', 'height', 'weight'].forEach(key => {
+      const cell = document.createElement('td');
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '0';
+      input.step = 'any';
+      input.value = box[key];
+      input.style.width = '100%';
+      input.dataset.index = i;
+      input.dataset.key = key;
+
+      input.addEventListener('input', (e) => {
+        const value = e.target.value;
+        const index = e.target.dataset.index;
+        const key = e.target.dataset.key;
+
+        if (value === '') {
+          boxData[index][key] = '';
+        } else {
+          const floatVal = parseFloat(value);
+          if (isNaN(floatVal) || floatVal < 0) {
+            return;
+          }
+          boxData[index][key] = floatVal;
+        }
+
+        recalcRow(index);
+        recalcTotals();
+        saveData();
       });
+
+      cell.appendChild(input);
+      row.appendChild(cell);
+    });
+
 
       // Non-editable calculated cells: volume, air, sea, land
       ['volume', 'airCost', 'seaCost', 'landCost'].forEach(key => {
