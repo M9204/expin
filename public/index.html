@@ -250,9 +250,11 @@ td[contenteditable="true"] {
 
 <div class="container">
   <h1>Box Volume and Shipping Calculator</h1>
-<select id="invoiceSelector" onchange="loadSelectedInvoice()">
+<select id="invoiceSelector" onchange="handleInvoiceSelection()">
   <option value="">-- Select Saved Invoice --</option>
+  <option value="__new__">➕ Add New Invoice</option>
 </select>
+
 
   <label for="invoiceTitle">Invoice Title:</label>
   <input type="text" id="invoiceTitle" placeholder="Enter title" />
@@ -296,13 +298,17 @@ td[contenteditable="true"] {
   // Box data array
   
   let boxData = [];
-  let selectedInvoiceFile = ''; // empty means new invoice
+  
   // Load saved data from localStorage on page load
 function loadInvoiceList() {
   fetch('/api/invoices')
     .then(res => res.json())
     .then(files => {
       const selector = document.getElementById('invoiceSelector');
+      selector.innerHTML = `
+        <option value="">-- Select Saved Invoice --</option>
+        <option value="__new__">➕ Add New Invoice</option>
+      `;
       files.forEach(file => {
         const opt = document.createElement('option');
         opt.value = file;
@@ -311,7 +317,9 @@ function loadInvoiceList() {
       });
     })
     .catch(err => console.error("Failed to fetch invoices:", err));
+  
 }
+
 
 function loadSelectedInvoice() {
   const file = document.getElementById('invoiceSelector').value;
@@ -337,6 +345,8 @@ function loadSelectedInvoice() {
       saveData(); // Save to that invoice file
     })
     .catch(err => alert("Failed to load invoice."));
+  saveData(); // Save into that file if needed
+
 }
 
 
@@ -353,6 +363,52 @@ window.onload = () => {
 };
 
   
+let selectedInvoiceFile = ''; // for tracking file name
+let isNewInvoice = false;
+
+function handleInvoiceSelection() {
+  const selector = document.getElementById('invoiceSelector');
+  const value = selector.value;
+
+  if (value === '') {
+    // Default = new blank invoice
+    selectedInvoiceFile = '';
+    isNewInvoice = false;
+    document.getElementById('invoiceTitle').value = '';
+    boxData = [];
+    renderTable();
+    recalcTotals();
+    saveData();
+    return;
+    saveData(); // Save into that file if needed
+
+  }
+
+  if (value === '__new__') {
+    // Add new invoice
+    selectedInvoiceFile = '';
+    isNewInvoice = true;
+    document.getElementById('invoiceTitle').value = '';
+    boxData = [];
+    renderTable();
+    recalcTotals();
+    return;
+  }
+
+  // Load existing invoice
+  selectedInvoiceFile = value;
+  isNewInvoice = false;
+  fetch(`/api/invoices/${value}`)
+    .then(res => res.json())
+    .then(data => {
+      boxData = data.boxes || [];
+      document.getElementById('invoiceTitle').value = data.title || '';
+      renderTable();
+      recalcTotals();
+      saveData(); // Save into that file if needed
+    })
+    .catch(err => alert("Failed to load invoice."));
+}
 
   // Add a new empty box row
   function addRow() {
@@ -563,6 +619,9 @@ window.onload = () => {
   // Save data and title to localStorage
   function saveData() {
   const title = document.getElementById('invoiceTitle').value.trim();
+
+  if (!title) return; // Skip if title is empty
+
   const payload = {
     title,
     timestamp: new Date().toISOString(),
@@ -571,8 +630,27 @@ window.onload = () => {
     totalSea: parseFloat(document.getElementById('totalSea').textContent),
     totalLand: parseFloat(document.getElementById('totalLand').textContent),
     totalWeight: parseFloat(document.getElementById('totalWeight').textContent),
-    status: "draft"
+    status: isNewInvoice ? 'new' : 'draft'
   };
+
+  // If it's a new invoice and not saved yet, use the title as filename
+  if (isNewInvoice && !selectedInvoiceFile) {
+    const sanitized = title.replace(/\s+/g, "_").replace(/[^\w\-]/g, "") + ".json";
+    selectedInvoiceFile = sanitized;
+    isNewInvoice = false;
+
+    // Add it to dropdown
+    const selector = document.getElementById('invoiceSelector');
+    if (![...selector.options].some(opt => opt.value === sanitized)) {
+      const opt = document.createElement('option');
+      opt.value = sanitized;
+      opt.textContent = title;
+      selector.appendChild(opt);
+    }
+    selector.value = sanitized;
+
+    document.getElementById('invoiceSelector').value = sanitized;
+  }
 
   const url = selectedInvoiceFile
     ? `/api/invoice/${selectedInvoiceFile}`
@@ -587,13 +665,10 @@ window.onload = () => {
     if (!res.ok) throw new Error("Save failed");
     return res.json();
   })
-  .then(data => {
-    console.log("Saved:", data.message);
-  })
-  .catch(err => {
-    console.error("Auto-save failed:", err);
-  });
+  .then(data => console.log("Saved:", data.message))
+  .catch(err => console.error("Auto-save failed:", err));
 }
+
 
 
 
