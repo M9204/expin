@@ -263,16 +263,7 @@ td[contenteditable="true"] {
       cellIndex.textContent = i + 1;
       row.appendChild(cellIndex);
 
-      /*/ Editable cells for L, W, H, Weight
-      ['length', 'width', 'height', 'weight'].forEach(key => {
-        const cell = document.createElement('td');
-        cell.contentEditable = true;
-        cell.dataset.key = key;
-        cell.dataset.index = i;
-        cell.textContent = box[key];
-        cell.addEventListener('input', onCellEdit);
-        row.appendChild(cell);
-      });*/
+     
       ['length', 'width', 'height', 'weight'].forEach(key => {
       const cell = document.createElement('td');
       const input = document.createElement('input');

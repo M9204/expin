@@ -44,7 +44,7 @@ app.post("/api/export", (req, res) => {
   }
 
   const sanitizedTitle = title.trim().replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
-  const exportFilename = ${sanitizedTitle}.json;
+  const exportFilename = `${sanitizedTitle}.json`;
   const exportPath = path.join(__dirname, exportFilename);
   const currentDataPath = path.join(__dirname, "data.json");
 
@@ -60,7 +60,7 @@ app.post("/api/export", (req, res) => {
     fs.writeFile(currentDataPath, JSON.stringify([], null, 2), err2 => {
       if (err2) return res.status(500).json({ error: "Failed to reset data.json.", details: err2 });
 
-      res.json({ message: Exported as ${exportFilename} and reset data.json. });
+      res.json(`{ message: Exported as ${exportFilename} and reset data.json. }`);
     });
   });
 });
@@ -82,5 +82,5 @@ app.get("/data.json", (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(Server running on port ${PORT});
+  console.log(`Server running on port ${PORT}`);
 });
