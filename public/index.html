@@ -244,16 +244,51 @@ td[contenteditable="true"] {
 }
 
 </style>
+  <style>
+  #invoiceSearchInput {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    box-sizing: border-box;
+    margin-bottom: 0;
+  }
+
+  .custom-dropdown {
+    list-style: none;
+    border: 1px solid #ccc;
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    width: 100%;
+    background: white;
+    z-index: 999;
+    display: none;
+  }
+
+  .custom-dropdown li {
+    padding: 10px;
+    cursor: pointer;
+  }
+
+  .custom-dropdown li:hover {
+    background-color: #f0f0f0;
+  }
+</style>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
 </head>
 <body>
 
 <div class="container">
   <h1>Box Volume and Shipping Calculator</h1>
-<select id="invoiceSelector" onchange="handleInvoiceSelection()">
-  <option value="">-- Select Saved Invoice --</option>
-  <option value="__new__">➕ Add New Invoice</option>
-</select>
+<div style="margin-bottom: 10px; position: relative;">
+  <input type="text" id="invoiceSearchInput" placeholder="🔍 Search or select invoice..." oninput="filterInvoices()" />
+  <ul id="invoiceDropdown" class="custom-dropdown"></ul>
+</div>
+
 
 
   <label for="invoiceTitle">Invoice Title:</label>
@@ -304,21 +339,40 @@ function loadInvoiceList() {
   fetch('/api/invoices')
     .then(res => res.json())
     .then(files => {
-      const selector = document.getElementById('invoiceSelector');
-      selector.innerHTML = `
-        <option value="">-- Select Saved Invoice --</option>
-        <option value="__new__">➕ Add New Invoice</option>
-      `;
-      files.forEach(file => {
-        const opt = document.createElement('option');
-        opt.value = file;
-        opt.textContent = file.replace(".json", "");
-        selector.appendChild(opt);
-      });
+      window.allInvoices = files;
+      renderInvoiceDropdown(files);
     })
     .catch(err => console.error("Failed to fetch invoices:", err));
-  
 }
+
+function renderInvoiceDropdown(invoices) {
+  const dropdown = document.getElementById('invoiceDropdown');
+  dropdown.innerHTML = '';
+
+  // "Add New Invoice" as the first fixed option
+  const addNew = document.createElement('li');
+  addNew.textContent = '➕ Add New Invoice';
+  addNew.onclick = () => handleInvoiceSelection('__new__');
+  dropdown.appendChild(addNew);
+
+  invoices.forEach(file => {
+    const li = document.createElement('li');
+    li.textContent = file.replace('.json', '');
+    li.onclick = () => handleInvoiceSelection(file);
+    dropdown.appendChild(li);
+  });
+
+  dropdown.style.display = 'block';
+}
+
+function filterInvoices() {
+  const searchTerm = document.getElementById('invoiceSearchInput').value.toLowerCase();
+  const filtered = window.allInvoices.filter(file =>
+    file.toLowerCase().includes(searchTerm)
+  );
+  renderInvoiceDropdown(filtered);
+}
+
 
 
 function loadSelectedInvoice() {
@@ -366,32 +420,22 @@ window.onload = () => {
 let selectedInvoiceFile = ''; // for tracking file name
 let isNewInvoice = false;
 
-function handleInvoiceSelection() {
-  const selector = document.getElementById('invoiceSelector');
-  const value = selector.value;
+function handleInvoiceSelection(value) {
+  const dropdown = document.getElementById('invoiceDropdown');
+  dropdown.style.display = 'none'; // Hide after selection
 
-  if (value === '') {
-    // Default = new blank invoice
-    selectedInvoiceFile = '';
-    isNewInvoice = false;
-    document.getElementById('invoiceTitle').value = '';
+  if (value === '__new__') {
+    const title = prompt("Enter title for the new invoice:");
+    if (!title) return;
+
+    const sanitized = title.replace(/\s+/g, "_").replace(/[^\w\-]/g, "") + ".json";
+    selectedInvoiceFile = sanitized;
+    isNewInvoice = true;
+    document.getElementById('invoiceTitle').value = title;
     boxData = [];
     renderTable();
     recalcTotals();
     saveData();
-    return;
-    saveData(); // Save into that file if needed
-
-  }
-
-  if (value === '__new__') {
-    // Add new invoice
-    selectedInvoiceFile = '';
-    isNewInvoice = true;
-    document.getElementById('invoiceTitle').value = '';
-    boxData = [];
-    renderTable();
-    recalcTotals();
     return;
   }
 
@@ -405,7 +449,6 @@ function handleInvoiceSelection() {
       document.getElementById('invoiceTitle').value = data.title || '';
       renderTable();
       recalcTotals();
-      saveData(); // Save into that file if needed
     })
     .catch(err => alert("Failed to load invoice."));
 }
