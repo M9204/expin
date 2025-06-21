@@ -8,12 +8,24 @@ DOWNLOAD_DIR = './downloaded_invoices'  # Location to copy invoices before delet
 def list_invoices():
     return glob.glob(os.path.join(INVOICE_DIR, '*.json'))
 
+def get_unique_filename(dest_folder, filename):
+    base, ext = os.path.splitext(filename)
+    counter = 1
+    new_name = filename
+    while os.path.exists(os.path.join(dest_folder, new_name)):
+        new_name = "{}({}){}".format(base, counter, ext)
+        counter += 1
+    return new_name
+
+
 def download_invoices(files):
     if not os.path.exists(DOWNLOAD_DIR):
         os.makedirs(DOWNLOAD_DIR)
 
     for f in files:
-        dest = os.path.join(DOWNLOAD_DIR, os.path.basename(f))
+        original_name = os.path.basename(f)
+        unique_name = get_unique_filename(DOWNLOAD_DIR, original_name)
+        dest = os.path.join(DOWNLOAD_DIR, unique_name)
         shutil.copy2(f, dest)
         print("Downloaded:", dest)
 
@@ -41,7 +53,7 @@ def prompt_action():
     if choice == '1':
         download_invoices(files)
         delete_invoices(files)
-        print("\nNumber of inoivce found is:",len(files)) 
+        print("\nNumber of invoices found is:", len(files))
 
     else:
         print("Operation cancelled.")
