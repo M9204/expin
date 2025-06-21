@@ -14,7 +14,8 @@
     "@fastify/view": "^8.0.0",
     "express": "^4.21.2",
     "xlsx": "^0.18.5",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "python": "^0.0.4"
   },
   "engines": {
     "node": "14.x"
