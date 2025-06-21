@@ -250,10 +250,13 @@ td[contenteditable="true"] {
 
 <div class="container">
   <h1>Box Volume and Shipping Calculator</h1>
+<select id="invoiceSelector" onchange="loadSelectedInvoice()">
+  <option value="">-- Select Saved Invoice --</option>
+</select>
 
   <label for="invoiceTitle">Invoice Title:</label>
   <input type="text" id="invoiceTitle" placeholder="Enter title" />
-
+  
   <button onclick="addRow()">Add Box</button>
 
   <table id="boxTable" aria-label="Boxes data table">
@@ -294,22 +297,47 @@ td[contenteditable="true"] {
   let boxData = [];
 
   // Load saved data from localStorage on page load
-  window.onload = () => {
-  fetch('/data.json')
-    .then(res => {
-      if (!res.ok) throw new Error("Failed to load data.json from server.");
-      return res.json();
+function loadInvoiceList() {
+  fetch('/api/invoices')
+    .then(res => res.json())
+    .then(files => {
+      const selector = document.getElementById('invoiceSelector');
+      files.forEach(file => {
+        const opt = document.createElement('option');
+        opt.value = file;
+        opt.textContent = file.replace(".json", "");
+        selector.appendChild(opt);
+      });
     })
+    .catch(err => console.error("Failed to fetch invoices:", err));
+}
+
+function loadSelectedInvoice() {
+  const file = document.getElementById('invoiceSelector').value;
+  if (!file) return;
+  fetch(`/api/invoices/${file}`)
+    .then(res => res.json())
+    .then(data => {
+      boxData = data.boxes || [];
+      document.getElementById('invoiceTitle').value = data.title || '';
+      renderTable();
+      recalcTotals();
+    })
+    .catch(err => alert("Failed to load invoice."));
+}
+
+window.onload = () => {
+  fetch('/data.json')
+    .then(res => res.json())
     .then(serverData => {
       boxData = serverData.boxes || [];
       document.getElementById('invoiceTitle').value = serverData.title || '';
       renderTable();
       recalcTotals();
-    })
-    .catch(err => {
-      console.error("Error loading server data:", err);
     });
+  loadInvoiceList();
 };
+
   
 
   // Add a new empty box row

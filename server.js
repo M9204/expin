@@ -15,6 +15,38 @@ app.use(cors());
 if (!fs.existsSync(DATA_FILE)) {
   fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
 }
+const INVOICES_DIR = path.join(__dirname, "invoices");
+
+// Ensure directory exists
+if (!fs.existsSync(INVOICES_DIR)) fs.mkdirSync(INVOICES_DIR);
+
+// Save export without moving/renaming data.json
+app.post("/api/export", (req, res) => {
+  const { title, data } = req.body;
+  if (typeof title !== 'string' || !title.trim()) return res.status(400).json({ error: "Invalid or missing title." });
+
+  const sanitizedTitle = title.trim().replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
+  const exportPath = path.join(INVOICES_DIR, `${sanitizedTitle}.json`);
+
+  fs.writeFile(exportPath, JSON.stringify(data, null, 2), err => {
+    if (err) return res.status(500).json({ error: "Failed to write export file." });
+    res.json({ message: `Exported as ${sanitizedTitle}.json` });
+  });
+});
+app.get("/api/invoices", (req, res) => {
+  fs.readdir(INVOICES_DIR, (err, files) => {
+    if (err) return res.status(500).json({ error: "Failed to list invoices." });
+    const jsonFiles = files.filter(file => file.endsWith(".json"));
+    res.json(jsonFiles);
+  });
+});
+
+app.get("/api/invoices/:name", (req, res) => {
+  const file = req.params.name;
+  const filePath = path.join(INVOICES_DIR, file);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Invoice not found." });
+  res.sendFile(filePath);
+});
 
 // Save incoming box data to data.json
 app.post("/api/data", (req, res) => {
