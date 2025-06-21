@@ -1,1 +1,21 @@
-[]
+{
+  "title": "pl",
+  "timestamp": "2025-06-21T07:04:06.261Z",
+  "boxes": [
+    {
+      "length": 50,
+      "width": 50,
+      "height": 50,
+      "weight": 5,
+      "volume": 0.125,
+      "airCost": 20.833333333333332,
+      "seaCost": 25,
+      "landCost": 31.25
+    }
+  ],
+  "totalAir": 20.83,
+  "totalSea": 25,
+  "totalLand": 31.25,
+  "totalWeight": 5,
+  "status": "draft"
+}
