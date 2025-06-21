@@ -1,178 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Invoice Manager</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    max-width: 700px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-  }
-  h1 {
-    text-align: center;
-  }
-  #invoiceList {
-    margin: 1rem 0;
-    padding: 0;
-    list-style: none;
-    max-height: 250px;
-    overflow-y: auto;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-  }
-  #invoiceList li {
-    padding: 8px 12px;
-    border-bottom: 1px solid #eee;
-  }
-  #invoiceList li:last-child {
-    border-bottom: none;
-  }
-  button {
-    padding: 12px 20px;
-    font-size: 16px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    margin-top: 1rem;
-    width: 100%;
-    max-width: 300px;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    transition: background-color 0.3s ease;
-  }
-  button:hover {
-    opacity: 0.9;
-  }
-  #downloadBtn {
-    background-color: #4caf50;
-    color: white;
-  }
-  #deleteBtn {
-    background-color: #f44336;
-    color: white;
-  }
-  #message {
-    margin-top: 1rem;
-    text-align: center;
-    font-weight: bold;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Invoice Cleanup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #d32f2f;
+    }
+    .result {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      background: #fff;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
 
-<h1>Invoice Manager</h1>
+  <h2>Move & Delete Invoices</h2>
+  <p>This tool moves all invoices from <code>/invoices</code> to <code>/downloaded_invoices</code>.</p>
 
-<p><strong>Invoices found:</strong> <span id="count">0</span></p>
-<ul id="invoiceList"></ul>
+  <button onclick="cleanupInvoices()">Move and Delete</button>
 
-<button id="downloadBtn" disabled>Download All Invoices</button>
-<button id="deleteBtn" disabled>Delete All Invoices</button>
+  <div id="output" class="result"></div>
 
-<p id="message"></p>
+  <script>
+    function cleanupInvoices() {
+      if (!confirm("Are you sure you want to move and delete all invoices?")) return;
 
-<script>
-  const invoiceListEl = document.getElementById('invoiceList');
-  const countEl = document.getElementById('count');
-  const downloadBtn = document.getElementById('downloadBtn');
-  const deleteBtn = document.getElementById('deleteBtn');
-  const messageEl = document.getElementById('message');
-
-  // Fetch invoice list from API
-  async function fetchInvoices() {
-    messageEl.textContent = 'Loading invoices...';
-    try {
-      const res = await fetch('/api/invoices');
-      if (!res.ok) throw new Error('Failed to fetch invoices');
-      const invoices = await res.json();
-
-      invoiceListEl.innerHTML = '';
-      if (invoices.length === 0) {
-        invoiceListEl.innerHTML = '<li>No invoices found.</li>';
-        countEl.textContent = '0';
-        downloadBtn.disabled = true;
-        deleteBtn.disabled = true;
-        messageEl.textContent = '';
-        return;
-      }
-
-      invoices.forEach(inv => {
-        const li = document.createElement('li');
-        li.textContent = inv;
-        invoiceListEl.appendChild(li);
-      });
-
-      countEl.textContent = invoices.length;
-      downloadBtn.disabled = false;
-      deleteBtn.disabled = false;
-      messageEl.textContent = '';
-    } catch (error) {
-      messageEl.textContent = 'Error loading invoices.';
-      console.error(error);
-      downloadBtn.disabled = true;
-      deleteBtn.disabled = true;
+      fetch('/api/cleanup', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          const output = document.getElementById('output');
+          if (data.success) {
+            output.textContent = "✅ Moved and deleted invoices:\n\n" + data.files.join("\n");
+          } else {
+            output.textContent = "❌ Failed:\n" + data.error;
+          }
+        })
+        .catch(err => {
+          document.getElementById('output').textContent = "❌ Request failed:\n" + err;
+        });
     }
-  }
-
-  // Trigger download all invoices (download zip from backend)
-  async function downloadAll() {
-    messageEl.textContent = 'Preparing download...';
-    try {
-      const res = await fetch('/api/invoices/download');
-      if (!res.ok) throw new Error('Download failed');
-
-      // Get filename from content-disposition or default
-      const disposition = res.headers.get('content-disposition');
-      let filename = 'invoices.zip';
-      if (disposition && disposition.indexOf('filename=') !== -1) {
-        filename = disposition.split('filename=')[1].replace(/"/g, '');
-      }
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-
-      messageEl.textContent = 'Download started.';
-    } catch (error) {
-      messageEl.textContent = 'Download failed.';
-      console.error(error);
-    }
-  }
-
-  // Delete all invoices
-  async function deleteAll() {
-    if (!confirm('Are you sure you want to delete ALL invoices? This action cannot be undone.')) {
-      return;
-    }
-    messageEl.textContent = 'Deleting invoices...';
-    try {
-      const res = await fetch('/api/invoices/delete', { method: 'POST' });
-      if (!res.ok) throw new Error('Delete failed');
-      const result = await res.json();
-
-      messageEl.textContent = result.message || 'Invoices deleted successfully.';
-      await fetchInvoices();  // refresh list
-    } catch (error) {
-      messageEl.textContent = 'Failed to delete invoices.';
-      console.error(error);
-    }
-  }
-
-  downloadBtn.addEventListener('click', downloadAll);
-  deleteBtn.addEventListener('click', deleteAll);
-
-  // Initial load
-  fetchInvoices();
-</script>
-
+  </script>
 </body>
 </html>

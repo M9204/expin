@@ -149,3 +149,44 @@ app2.get("/", (req, res) => {
 app2.listen(PORT2, () => {
   console.log(`Static Server running on port ${PORT2}`);
 });
+
+const fse = require('fs-extra'); // For moving files safely
+
+const INVOICE_DIR = path.join(__dirname, 'invoices');
+const DOWNLOAD_DIR = path.join(__dirname, 'downloaded_invoices');
+
+
+app2.post('/api/cleanup', async (req, res) => {
+  try {
+    const files = fs.readdirSync(INVOICE_DIR).filter(f => f.endsWith('.json'));
+
+    if (!fs.existsSync(DOWNLOAD_DIR)) {
+      fs.mkdirSync(DOWNLOAD_DIR);
+    }
+
+    const movedFiles = [];
+
+    for (const file of files) {
+      const src = path.join(INVOICE_DIR, file);
+      const destBase = path.join(DOWNLOAD_DIR, file);
+
+      // Ensure unique name
+      let dest = destBase;
+      let counter = 1;
+      while (fs.existsSync(dest)) {
+        const ext = path.extname(file);
+        const base = path.basename(file, ext);
+        dest = path.join(DOWNLOAD_DIR, `${base}(${counter})${ext}`);
+        counter++;
+      }
+
+      await fse.move(src, dest);
+      movedFiles.push(file);
+    }
+
+    res.json({ success: true, files: movedFiles });
+  } catch (err) {
+    console.error("Cleanup failed:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
