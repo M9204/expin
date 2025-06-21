@@ -1,0 +1,31 @@
+{
+  "title": "123",
+  "timestamp": "2025-06-21T10:53:45.103Z",
+  "boxes": [
+    {
+      "length": 50,
+      "width": 50,
+      "height": 50,
+      "weight": 50,
+      "volume": 0.125,
+      "airCost": 20.833333333333332,
+      "seaCost": 25,
+      "landCost": 31.25
+    },
+    {
+      "length": 50,
+      "width": 50,
+      "height": 50,
+      "weight": 55,
+      "volume": 0.125,
+      "airCost": 20.833333333333332,
+      "seaCost": 25,
+      "landCost": 31.25
+    }
+  ],
+  "totalAir": 41.67,
+  "totalSea": 50,
+  "totalLand": 62.5,
+  "totalWeight": 105,
+  "status": "new"
+}

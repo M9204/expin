@@ -155,15 +155,19 @@ app2.listen(PORT2, () => {
 const INVOICE_DIR = path.join(__dirname, 'invoices');
 const DOWNLOAD_DIR = path.join(__dirname, 'download_invoice');
 
-app.get('/api/invoices', (req, res) => {
+app2.get('/api/invoices', (req, res) => {
   fs.readdir(INVOICE_DIR, (err, files) => {
     if (err) return res.status(500).json({ error: 'Failed to list invoices' });
     const jsonFiles = files.filter(f => f.endsWith('.json'));
     res.json(jsonFiles);
   });
 });
+// Ensure destination folder exists on server start
+if (!fs.existsSync(DOWNLOAD_DIR)) {
+  fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
+}
 
-app.post('/api/move-invoices', (req, res) => {
+app2.post('/api/move-invoices', (req, res) => {
   const files = req.body.files;
   if (!Array.isArray(files)) return res.status(400).json({ error: 'Invalid files list' });
 
