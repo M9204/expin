@@ -1,0 +1,21 @@
+{
+  "title": "SREE",
+  "timestamp": "2025-06-21T08:07:11.297Z",
+  "boxes": [
+    {
+      "length": 31,
+      "width": 31,
+      "height": 31,
+      "weight": 313,
+      "volume": 0.029791,
+      "airCost": 4.965166666666667,
+      "seaCost": 5.9582,
+      "landCost": 7.44775
+    }
+  ],
+  "totalAir": 4.97,
+  "totalSea": 5.96,
+  "totalLand": 7.45,
+  "totalWeight": 313,
+  "status": "new"
+}

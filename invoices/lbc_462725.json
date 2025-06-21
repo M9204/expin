@@ -1,0 +1,21 @@
+{
+  "title": "lbc 462725",
+  "timestamp": "2025-06-21T08:16:44.880Z",
+  "boxes": [
+    {
+      "length": 1054,
+      "width": 654,
+      "height": 554,
+      "weight": 60,
+      "volume": 381.881064,
+      "airCost": 63646.844,
+      "seaCost": 76376.2128,
+      "landCost": 95470.266
+    }
+  ],
+  "totalAir": 63646.84,
+  "totalSea": 76376.21,
+  "totalLand": 95470.27,
+  "totalWeight": 60,
+  "status": "draft"
+}
