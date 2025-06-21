@@ -5,6 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Box Volume and Shipping Calculator</title>
 <style>
+  /*
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 10px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    overflow-x: auto;
+    display: block;
+  }
+  table, th, td {
+    border: 1px solid #ddd;
+  }
+  th, td {
+    padding: 10px;
+    text-align: center;
+  }
+  th {
+    background-color: #f4f4f4;
+  }
+  input[type="text"], input[type="number"] {
+    padding: 10px;
+    margin: 5px 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  button {
+    padding: 12px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 8px;
+    font-size: 16px;
+    width: 100%;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+  #clearButton, #exportButton {
+    margin-top: 8px;
+    padding: 12px;
+    background-color: #f44336;
+  }
+  #clearButton:hover, #exportButton:hover {
+    background-color: #e53935;
+  }
+  .total {
+    font-weight: bold;
+    margin-top: 20px;
+  }
+  @media screen and (max-width: 768px) {
+    body { margin: 10px; font-size: 14px; }
+    table { font-size: 12px; margin-top: 10px; }
+    th, td { padding: 8px; }
+    button { padding: 12px; font-size: 14px; }
+    .total { font-size: 14px; }
+  }
+  @media screen and (max-width: 480px) {
+    button { font-size: 18px; padding: 10px; }
+    .total { font-size: 18px; }
+    input[type="text"], input[type="number"] { padding: 12px; }
+  }
+  td[contenteditable="true"] {
+    background-color: #fff9c4;  Light yellow background for editable cells */
+    outline: none;
+  }
+  td input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+*/
+  
   
   /* General box-sizing reset */
 *,
@@ -164,11 +250,12 @@ td[contenteditable="true"] {
 
 <div class="container">
   <h1>Box Volume and Shipping Calculator</h1>
-
+  <select id="invoiceSelector" onchange="loadSelectedInvoice()">
+  <option value="">-- Select Saved Invoice --</option>
+  </select>
   <label for="invoiceTitle">Invoice Title:</label>
   <input type="text" id="invoiceTitle" placeholder="Enter title" />
   
-
   <button onclick="addRow()">Add Box</button>
 
   <table id="boxTable" aria-label="Boxes data table">
@@ -209,22 +296,47 @@ td[contenteditable="true"] {
   let boxData = [];
 
   // Load saved data from localStorage on page load
-  window.onload = () => {
-  fetch('/data.json')
-    .then(res => {
-      if (!res.ok) throw new Error("Failed to load data.json from server.");
-      return res.json();
+  function loadInvoiceList() {
+  fetch('/api/invoices')
+    .then(res => res.json())
+    .then(files => {
+      const selector = document.getElementById('invoiceSelector');
+      files.forEach(file => {
+        const opt = document.createElement('option');
+        opt.value = file;
+        opt.textContent = file.replace(".json", "");
+        selector.appendChild(opt);
+      });
     })
+    .catch(err => console.error("Failed to fetch invoices:", err));
+}
+
+function loadSelectedInvoice() {
+  const file = document.getElementById('invoiceSelector').value;
+  if (!file) return;
+  fetch(`/api/invoices/${file}`)
+    .then(res => res.json())
+    .then(data => {
+      boxData = data.boxes || [];
+      document.getElementById('invoiceTitle').value = data.title || '';
+      renderTable();
+      recalcTotals();
+    })
+    .catch(err => alert("Failed to load invoice."));
+}
+
+window.onload = () => {
+  fetch('/data.json')
+    .then(res => res.json())
     .then(serverData => {
       boxData = serverData.boxes || [];
       document.getElementById('invoiceTitle').value = serverData.title || '';
       renderTable();
       recalcTotals();
-    })
-    .catch(err => {
-      console.error("Error loading server data:", err);
     });
+  loadInvoiceList();
 };
+
   
 
   // Add a new empty box row
@@ -421,7 +533,7 @@ td[contenteditable="true"] {
       box.landCost = (l * w * h) / 4000;
     }
 
-    const row = document.querySelector(#boxTable tbody).children[index];
+    const row = document.querySelector(`#boxTable tbody`).children[index];
     if (!row) return;
 
     row.children[5].textContent = box.volume ? box.volume.toFixed(2) : '0.00';
