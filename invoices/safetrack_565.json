@@ -1,0 +1,21 @@
+{
+  "title": "safetrack 565",
+  "timestamp": "2025-06-21T10:39:50.612Z",
+  "boxes": [
+    {
+      "length": 15,
+      "width": 151,
+      "height": 54,
+      "weight": 5,
+      "volume": 0.12231,
+      "airCost": 20.385,
+      "seaCost": 24.462,
+      "landCost": 30.5775
+    }
+  ],
+  "totalAir": 20.39,
+  "totalSea": 24.46,
+  "totalLand": 30.58,
+  "totalWeight": 5,
+  "status": "new"
+}
