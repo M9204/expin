@@ -153,33 +153,34 @@ app2.listen(PORT2, () => {
 
 
 const INVOICE_DIR = path.join(__dirname, 'invoices');
-const DOWNLOAD_DIR = path.join(__dirname, 'downloaded_invoices');
+const DOWNLOAD_DIR = path.join(__dirname, 'download_invoice');
 
-app2.post('/api/move-and-delete', (req, res) => {
-  try {
-    if (!fs.existsSync(INVOICE_DIR)) return res.status(400).json({ message: "Invoice folder not found" });
-    if (!fs.existsSync(DOWNLOAD_DIR)) fs.mkdirSync(DOWNLOAD_DIR);
+app.get('/api/invoices', (req, res) => {
+  fs.readdir(INVOICE_DIR, (err, files) => {
+    if (err) return res.status(500).json({ error: 'Failed to list invoices' });
+    const jsonFiles = files.filter(f => f.endsWith('.json'));
+    res.json(jsonFiles);
+  });
+});
 
-    const files = fs.readdirSync(INVOICE_DIR).filter(f => f.endsWith('.json'));
-    let moved = 0;
+app.post('/api/move-invoices', (req, res) => {
+  const files = req.body.files;
+  if (!Array.isArray(files)) return res.status(400).json({ error: 'Invalid files list' });
 
-    files.forEach(file => {
-      const src = path.join(INVOICE_DIR, file);
-      let dest = path.join(DOWNLOAD_DIR, file);
-      let base = path.parse(file).name;
-      let ext = path.parse(file).ext;
-      let counter = 1;
-      while (fs.existsSync(dest)) {
-        dest = path.join(DOWNLOAD_DIR, `${base}(${counter})${ext}`);
-        counter++;
+  const movedFiles = [];
+
+  files.forEach(filename => {
+    const src = path.join(INVOICE_DIR, filename);
+    const dest = path.join(DOWNLOAD_DIR, filename);
+    if (fs.existsSync(src)) {
+      try {
+        fs.renameSync(src, dest);
+        movedFiles.push(filename);
+      } catch (e) {
+        console.error(`Failed to move ${filename}:`, e);
       }
-      fs.renameSync(src, dest);
-      moved++;
-    });
+    }
+  });
 
-    res.json({ message: `Moved and deleted ${moved} invoice(s).` });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: "Error during operation." });
-  }
+  res.json({ movedFiles });
 });

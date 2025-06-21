@@ -1,72 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Invoice Cleaner</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
-      text-align: center;
-    }
-    .container {
-      background: white;
-      padding: 30px;
-      max-width: 600px;
-      margin: auto;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    button {
-      background-color: #e53935;
-      color: white;
-      border: none;
-      padding: 14px 24px;
-      font-size: 16px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #c62828;
-    }
-    .status {
-      margin-top: 20px;
-      font-weight: bold;
-      color: green;
-    }
-    .error {
-      color: red;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Invoice Mover</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 10px;
+  }
+  h1 {
+    text-align: center;
+  }
+  #invoiceList, #movedList {
+    margin-top: 20px;
+    border-collapse: collapse;
+    width: 100%;
+  }
+  #invoiceList th, #invoiceList td, #movedList th, #movedList td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
+  #invoiceList th, #movedList th {
+    background-color: #f4f4f4;
+  }
+  button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 14px;
+    margin-top: 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  button:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+  }
+  #statusMessage {
+    margin-top: 15px;
+    font-weight: bold;
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Move and Clear Invoices</h1>
-    <p>This will move all invoices from <code>/invoices</code> to <code>/downloaded_invoices</code> and delete the originals.</p>
-    <button onclick="moveAndClearInvoices()">Move and Delete Invoices</button>
-    <div id="status" class="status"></div>
-  </div>
 
-  <script>
-    async function moveAndClearInvoices() {
-      const status = document.getElementById("status");
-      status.textContent = "Processing...";
-      status.className = "status";
+<h1>Invoice Mover</h1>
 
-      try {
-        const res = await fetch("/api/move-and-delete", { method: "POST" });
-        const data = await res.json();
+<button id="btnLoadInvoices">Load Invoices</button>
+<button id="btnMoveAll" disabled>Move All Invoices to Download Folder</button>
 
-        if (!res.ok) throw new Error(data.message || "Failed");
+<table id="invoiceList" aria-label="List of invoices">
+  <thead>
+    <tr>
+      <th>Invoice Filename</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-        status.textContent = data.message;
-      } catch (err) {
-        status.textContent = "Error: " + err.message;
-        status.className = "status error";
-      }
+<h2>Moved Invoices:</h2>
+<table id="movedList" aria-label="List of moved invoices">
+  <thead>
+    <tr>
+      <th>Moved Filename</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div id="statusMessage"></div>
+
+<script>
+  const btnLoad = document.getElementById('btnLoadInvoices');
+  const btnMoveAll = document.getElementById('btnMoveAll');
+  const invoiceListBody = document.querySelector('#invoiceList tbody');
+  const movedListBody = document.querySelector('#movedList tbody');
+  const statusMessage = document.getElementById('statusMessage');
+
+  let invoices = [];
+
+  // Load invoice files from server API
+  async function loadInvoices() {
+    statusMessage.textContent = 'Loading invoices...';
+    try {
+      const res = await fetch('/api/invoices');
+      if (!res.ok) throw new Error('Failed to load invoices');
+      invoices = await res.json();
+      renderInvoiceList();
+      statusMessage.textContent = `Found ${invoices.length} invoice(s).`;
+      btnMoveAll.disabled = invoices.length === 0;
+      movedListBody.innerHTML = ''; // clear moved list
+    } catch (e) {
+      statusMessage.textContent = 'Error loading invoices.';
+      console.error(e);
+      btnMoveAll.disabled = true;
     }
-  </script>
+  }
+
+  // Render invoice list in table
+  function renderInvoiceList() {
+    invoiceListBody.innerHTML = '';
+    invoices.forEach(filename => {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.textContent = filename;
+      tr.appendChild(td);
+      invoiceListBody.appendChild(tr);
+    });
+  }
+
+  // Move all invoices by calling server API
+  async function moveAllInvoices() {
+    if (!confirm(`Move all ${invoices.length} invoices to download_invoice folder?`)) return;
+
+    statusMessage.textContent = 'Moving invoices...';
+    btnMoveAll.disabled = true;
+    try {
+      const res = await fetch('/api/move-invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: invoices }),
+      });
+      if (!res.ok) throw new Error('Failed to move invoices');
+      const data = await res.json();
+
+      // Show moved files
+      movedListBody.innerHTML = '';
+      data.movedFiles.forEach(filename => {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.textContent = filename;
+        tr.appendChild(td);
+        movedListBody.appendChild(tr);
+      });
+
+      statusMessage.textContent = `Moved ${data.movedFiles.length} invoices successfully.`;
+
+      // Reload invoice list after move
+      await loadInvoices();
+
+    } catch (e) {
+      statusMessage.textContent = 'Error moving invoices.';
+      console.error(e);
+      btnMoveAll.disabled = false;
+    }
+  }
+
+  btnLoad.addEventListener('click', loadInvoices);
+  btnMoveAll.addEventListener('click', moveAllInvoices);
+
+  // Optionally load invoices on page load
+  // loadInvoices();
+</script>
+
 </body>
 </html>
