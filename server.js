@@ -136,20 +136,16 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-
-
+// Second server (static page server on another port)
 const app2 = express();
-const PORT2 = 30002;  // your desired port
+const PORT2 = 30002;
 
-// Serve static files from current directory (or specify folder)
 app2.use(express.static(path.join(__dirname)));
 
-// Optional: explicitly serve my-page-name.html on root path
-app2.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'my-page-name.html'));
+app2.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "my-page-name.html"));
 });
 
 app2.listen(PORT2, () => {
-  console.log(`Server running on port ${PORT2}`);
+  console.log(`Static Server running on port ${PORT2}`);
 });
-
