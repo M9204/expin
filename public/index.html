@@ -667,6 +667,9 @@ function handleInvoiceSelection() {
   })
   .then(data => console.log("Saved:", data.message))
   .catch(err => console.error("Auto-save failed:", err));
+  
+  document.getElementById('invoiceSelector').value = selectedInvoiceFile;
+
 }
 
 

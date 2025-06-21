@@ -1,0 +1,41 @@
+{
+  "title": "Safetrack 244",
+  "timestamp": "2025-06-21T07:49:24.264Z",
+  "boxes": [
+    {
+      "length": 15,
+      "width": 150,
+      "height": 160,
+      "weight": 90,
+      "volume": 0.36,
+      "airCost": 60,
+      "seaCost": 72,
+      "landCost": 90
+    },
+    {
+      "length": 9,
+      "width": 90,
+      "height": 695,
+      "weight": 6,
+      "volume": 0.56295,
+      "airCost": 93.825,
+      "seaCost": 112.59,
+      "landCost": 140.7375
+    },
+    {
+      "length": 150,
+      "width": 1504,
+      "height": 60,
+      "weight": 58,
+      "volume": 13.536,
+      "airCost": 2256,
+      "seaCost": 2707.2,
+      "landCost": 3384
+    }
+  ],
+  "totalAir": 2409.82,
+  "totalSea": 2891.79,
+  "totalLand": 3614.74,
+  "totalWeight": 154,
+  "status": "draft"
+}

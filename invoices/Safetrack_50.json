@@ -1,0 +1,21 @@
+{
+  "title": "Safetrack 50",
+  "timestamp": "2025-06-21T07:49:25.844Z",
+  "boxes": [
+    {
+      "length": 50,
+      "width": 50,
+      "height": 60,
+      "weight": 9,
+      "volume": 0.15,
+      "airCost": 25,
+      "seaCost": 30,
+      "landCost": 37.5
+    }
+  ],
+  "totalAir": 25,
+  "totalSea": 30,
+  "totalLand": 37.5,
+  "totalWeight": 9,
+  "status": "draft"
+}
