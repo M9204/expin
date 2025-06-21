@@ -1,0 +1,21 @@
+{
+  "title": "Super Express",
+  "timestamp": "2025-06-21T08:54:57.402Z",
+  "boxes": [
+    {
+      "length": 50,
+      "width": 40,
+      "height": 30,
+      "weight": 20,
+      "volume": 0.06,
+      "airCost": 10,
+      "seaCost": 12,
+      "landCost": 15
+    }
+  ],
+  "totalAir": 10,
+  "totalSea": 12,
+  "totalLand": 15,
+  "totalWeight": 20,
+  "status": "new"
+}
