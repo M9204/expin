@@ -1,67 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Invoice Cleanup</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice Cleaner</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 40px auto;
+      background: #f4f4f4;
       padding: 20px;
-      background: #f9f9f9;
+      text-align: center;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     button {
-      background-color: #f44336;
+      background-color: #e53935;
       color: white;
       border: none;
-      padding: 12px 20px;
+      padding: 14px 24px;
       font-size: 16px;
-      cursor: pointer;
       border-radius: 4px;
+      cursor: pointer;
     }
     button:hover {
-      background-color: #d32f2f;
+      background-color: #c62828;
     }
-    .result {
+    .status {
       margin-top: 20px;
-      white-space: pre-wrap;
-      font-family: monospace;
-      background: #fff;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      font-weight: bold;
+      color: green;
+    }
+    .error {
+      color: red;
     }
   </style>
 </head>
 <body>
-
-  <h2>Move & Delete Invoices</h2>
-  <p>This tool moves all invoices from <code>/invoices</code> to <code>/downloaded_invoices</code>.</p>
-
-  <button onclick="cleanupInvoices()">Move and Delete</button>
-
-  <div id="output" class="result"></div>
+  <div class="container">
+    <h1>Move and Clear Invoices</h1>
+    <p>This will move all invoices from <code>/invoices</code> to <code>/downloaded_invoices</code> and delete the originals.</p>
+    <button onclick="moveAndClearInvoices()">Move and Delete Invoices</button>
+    <div id="status" class="status"></div>
+  </div>
 
   <script>
-    function cleanupInvoices() {
-      if (!confirm("Are you sure you want to move and delete all invoices?")) return;
+    async function moveAndClearInvoices() {
+      const status = document.getElementById("status");
+      status.textContent = "Processing...";
+      status.className = "status";
 
-      fetch('/api/cleanup', { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-          const output = document.getElementById('output');
-          if (data.success) {
-            output.textContent = "✅ Moved and deleted invoices:\n\n" + data.files.join("\n");
-          } else {
-            output.textContent = "❌ Failed:\n" + data.error;
-          }
-        })
-        .catch(err => {
-          document.getElementById('output').textContent = "❌ Request failed:\n" + err;
-        });
+      try {
+        const res = await fetch("/api/move-and-delete", { method: "POST" });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.message || "Failed");
+
+        status.textContent = data.message;
+      } catch (err) {
+        status.textContent = "Error: " + err.message;
+        status.className = "status error";
+      }
     }
   </script>
 </body>

@@ -150,43 +150,36 @@ app2.listen(PORT2, () => {
   console.log(`Static Server running on port ${PORT2}`);
 });
 
-const fse = require('fs-extra'); // For moving files safely
+
 
 const INVOICE_DIR = path.join(__dirname, 'invoices');
 const DOWNLOAD_DIR = path.join(__dirname, 'downloaded_invoices');
 
-
-app2.post('/api/cleanup', async (req, res) => {
+app2.post('/api/move-and-delete', (req, res) => {
   try {
+    if (!fs.existsSync(INVOICE_DIR)) return res.status(400).json({ message: "Invoice folder not found" });
+    if (!fs.existsSync(DOWNLOAD_DIR)) fs.mkdirSync(DOWNLOAD_DIR);
+
     const files = fs.readdirSync(INVOICE_DIR).filter(f => f.endsWith('.json'));
+    let moved = 0;
 
-    if (!fs.existsSync(DOWNLOAD_DIR)) {
-      fs.mkdirSync(DOWNLOAD_DIR);
-    }
-
-    const movedFiles = [];
-
-    for (const file of files) {
+    files.forEach(file => {
       const src = path.join(INVOICE_DIR, file);
-      const destBase = path.join(DOWNLOAD_DIR, file);
-
-      // Ensure unique name
-      let dest = destBase;
+      let dest = path.join(DOWNLOAD_DIR, file);
+      let base = path.parse(file).name;
+      let ext = path.parse(file).ext;
       let counter = 1;
       while (fs.existsSync(dest)) {
-        const ext = path.extname(file);
-        const base = path.basename(file, ext);
         dest = path.join(DOWNLOAD_DIR, `${base}(${counter})${ext}`);
         counter++;
       }
+      fs.renameSync(src, dest);
+      moved++;
+    });
 
-      await fse.move(src, dest);
-      movedFiles.push(file);
-    }
-
-    res.json({ success: true, files: movedFiles });
-  } catch (err) {
-    console.error("Cleanup failed:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.json({ message: `Moved and deleted ${moved} invoice(s).` });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error during operation." });
   }
 });
