@@ -136,55 +136,71 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Second server (static page server on another port)
 const app2 = express();
-const PORT2 = 30002;
-
-app2.use(express.static(path.join(__dirname)));
-
-app2.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "my-page-name.html"));
-});
-
-app2.listen(PORT2, () => {
-  console.log(`Static Server running on port ${PORT2}`);
-});
-
-
+const PORT2 = 3002;
 
 const INVOICE_DIR = path.join(__dirname, 'invoices');
 const DOWNLOAD_DIR = path.join(__dirname, 'download_invoice');
 
+app2.use(express.json());
+
+// Serve static files from "public" folder
+app2.use(express.static(path.join(__dirname, 'public')));
+
+// Serve main HTML page at /
+app2.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'my-page-name.html'));
+});
+
+// API endpoint to list invoice files
 app2.get('/api/invoices', (req, res) => {
   fs.readdir(INVOICE_DIR, (err, files) => {
-    if (err) return res.status(500).json({ error: 'Failed to list invoices' });
-    const jsonFiles = files.filter(f => f.endsWith('.json'));
-    res.json(jsonFiles);
+    if (err) {
+      console.error('Failed to read invoices directory:', err);
+      return res.status(500).json({ error: 'Failed to list invoices' });
+    }
+    const invoiceFiles = files.filter(f => f.endsWith('.json')); // or other filter
+    res.json(invoiceFiles);
   });
 });
-// Ensure destination folder exists on server start
-if (!fs.existsSync(DOWNLOAD_DIR)) {
-  fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
-}
 
+// API endpoint to move invoice files to download_invoice
 app2.post('/api/move-invoices', (req, res) => {
   const files = req.body.files;
-  if (!Array.isArray(files)) return res.status(400).json({ error: 'Invalid files list' });
+  if (!Array.isArray(files)) {
+    console.error('Invalid files list received:', req.body.files);
+    return res.status(400).json({ error: 'Invalid files list' });
+  }
 
   const movedFiles = [];
+  const errors = [];
 
   files.forEach(filename => {
     const src = path.join(INVOICE_DIR, filename);
     const dest = path.join(DOWNLOAD_DIR, filename);
-    if (fs.existsSync(src)) {
-      try {
-        fs.renameSync(src, dest);
-        movedFiles.push(filename);
-      } catch (e) {
-        console.error(`Failed to move ${filename}:`, e);
-      }
+    if (!fs.existsSync(src)) {
+      const msg = `Source file does not exist: ${src}`;
+      console.error(msg);
+      errors.push(msg);
+      return;
+    }
+    try {
+      fs.renameSync(src, dest);
+      movedFiles.push(filename);
+      console.log(`Moved file: ${filename}`);
+    } catch (e) {
+      console.error(`Failed to move ${filename}:`, e);
+      errors.push(`Failed to move ${filename}: ${e.message}`);
     }
   });
 
-  res.json({ movedFiles });
+  if (errors.length > 0) {
+    res.status(207).json({ movedFiles, errors });
+  } else {
+    res.json({ movedFiles });
+  }
+});
+
+app2.listen(PORT2, () => {
+  console.log(`Invoice mover running on port ${PORT2}`);
 });
