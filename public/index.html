@@ -294,8 +294,9 @@ td[contenteditable="true"] {
   const INVOICE_TITLE_KEY = 'invoiceTitle';
 
   // Box data array
+  
   let boxData = [];
-
+  let selectedInvoiceFile = ''; // empty means new invoice
   // Load saved data from localStorage on page load
 function loadInvoiceList() {
   fetch('/api/invoices')
@@ -314,7 +315,18 @@ function loadInvoiceList() {
 
 function loadSelectedInvoice() {
   const file = document.getElementById('invoiceSelector').value;
-  if (!file) return;
+  selectedInvoiceFile = file; // Save the filename
+
+  if (!file) {
+    // New invoice mode
+    boxData = [];
+    document.getElementById('invoiceTitle').value = '';
+    renderTable();
+    recalcTotals();
+    saveData(); // Save to data.json
+    return;
+  }
+
   fetch(`/api/invoices/${file}`)
     .then(res => res.json())
     .then(data => {
@@ -322,9 +334,11 @@ function loadSelectedInvoice() {
       document.getElementById('invoiceTitle').value = data.title || '';
       renderTable();
       recalcTotals();
+      saveData(); // Save to that invoice file
     })
     .catch(err => alert("Failed to load invoice."));
 }
+
 
 window.onload = () => {
   fetch('/data.json')
@@ -548,26 +562,39 @@ window.onload = () => {
 
   // Save data and title to localStorage
   function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(boxData));
-  localStorage.setItem(INVOICE_TITLE_KEY, document.getElementById('invoiceTitle').value.trim());
+  const title = document.getElementById('invoiceTitle').value.trim();
+  const payload = {
+    title,
+    timestamp: new Date().toISOString(),
+    boxes: boxData,
+    totalAir: parseFloat(document.getElementById('totalAir').textContent),
+    totalSea: parseFloat(document.getElementById('totalSea').textContent),
+    totalLand: parseFloat(document.getElementById('totalLand').textContent),
+    totalWeight: parseFloat(document.getElementById('totalWeight').textContent),
+    status: "draft"
+  };
 
-  // Also send to server
-  fetch('/api/data', {
+  const url = selectedInvoiceFile
+    ? `/api/invoice/${selectedInvoiceFile}`
+    : `/api/data`;
+
+  fetch(url, {
     method: 'POST',
-    mode: 'cors', 
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title: document.getElementById('invoiceTitle').value.trim(),
-      timestamp: new Date().toISOString(),
-      boxes: boxData,
-      totalAir: parseFloat(document.getElementById('totalAir').textContent),
-      totalSea: parseFloat(document.getElementById('totalSea').textContent),
-      totalLand: parseFloat(document.getElementById('totalLand').textContent),
-      totalWeight: parseFloat(document.getElementById('totalWeight').textContent),
-      status: "draft"
-    })
-  }).catch(err => console.error("Auto-save failed:", err));
+    body: JSON.stringify(payload)
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Save failed");
+    return res.json();
+  })
+  .then(data => {
+    console.log("Saved:", data.message);
+  })
+  .catch(err => {
+    console.error("Auto-save failed:", err);
+  });
 }
+
 
 
   // Export the table to Excel with invoice title as filename

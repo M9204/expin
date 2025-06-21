@@ -1,6 +1,6 @@
 {
   "title": "pl",
-  "timestamp": "2025-06-21T07:04:06.261Z",
+  "timestamp": "2025-06-21T07:30:52.974Z",
   "boxes": [
     {
       "length": 50,
@@ -11,11 +11,21 @@
       "airCost": 20.833333333333332,
       "seaCost": 25,
       "landCost": 31.25
+    },
+    {
+      "length": 80,
+      "width": 80,
+      "height": 80,
+      "weight": 8,
+      "volume": 0.512,
+      "airCost": 85.33333333333333,
+      "seaCost": 102.4,
+      "landCost": 128
     }
   ],
-  "totalAir": 20.83,
-  "totalSea": 25,
-  "totalLand": 31.25,
-  "totalWeight": 5,
+  "totalAir": 106.17,
+  "totalSea": 127.4,
+  "totalLand": 159.25,
+  "totalWeight": 13,
   "status": "draft"
 }

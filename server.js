@@ -20,6 +20,25 @@ const INVOICES_DIR = path.join(__dirname, "invoices");
 // Ensure directory exists
 if (!fs.existsSync(INVOICES_DIR)) fs.mkdirSync(INVOICES_DIR);
 
+
+app.post("/api/invoice/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const sanitized = filename.replace(/[^\w\-\.]/g, ''); // prevent injection
+  const fullPath = path.join(INVOICES_DIR, sanitized);
+
+  const body = req.body;
+  if (!body || typeof body !== "object") {
+    return res.status(400).json({ error: "Invalid data format." });
+  }
+
+  fs.writeFile(fullPath, JSON.stringify(body, null, 2), err => {
+    if (err) {
+      console.error("Failed to write invoice data:", err);
+      return res.status(500).json({ error: "Failed to save invoice data." });
+    }
+    res.json({ message: `${sanitized} saved successfully.` });
+  });
+});
 // Save export without moving/renaming data.json
 app.post("/api/export", (req, res) => {
   const { title, data } = req.body;
