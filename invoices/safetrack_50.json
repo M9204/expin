@@ -1,10 +1,41 @@
 {
-  "title": "safetrack 50",
-  "timestamp": "2025-06-22T06:09:53.801Z",
-  "boxes": [],
-  "totalAir": 0,
-  "totalSea": 0,
-  "totalLand": 0,
-  "totalWeight": 0,
+  "title": "Saf/uae/5th june",
+  "timestamp": "2025-06-23T12:00:09.681Z",
+  "boxes": [
+    {
+      "length": 10,
+      "width": 20,
+      "height": 15,
+      "weight": 11,
+      "volume": 0.003,
+      "airCost": 0.5,
+      "seaCost": 0.6,
+      "landCost": 0.75
+    },
+    {
+      "length": 86,
+      "width": 25,
+      "height": 45,
+      "weight": 12,
+      "volume": 0.09675,
+      "airCost": 16.125,
+      "seaCost": 19.35,
+      "landCost": 24.1875
+    },
+    {
+      "length": "",
+      "width": "",
+      "height": "",
+      "weight": "",
+      "volume": 0,
+      "airCost": 0,
+      "seaCost": 0,
+      "landCost": 0
+    }
+  ],
+  "totalAir": 16.63,
+  "totalSea": 19.95,
+  "totalLand": 24.94,
+  "totalWeight": 23,
   "status": "draft"
 }
