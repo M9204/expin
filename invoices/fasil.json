@@ -1,0 +1,21 @@
+{
+  "title": "fasil",
+  "timestamp": "2025-06-23T12:22:00.933Z",
+  "boxes": [
+    {
+      "length": 45,
+      "width": 45,
+      "height": 45,
+      "weight": 20,
+      "volume": 0.091125,
+      "airCost": 15.1875,
+      "seaCost": 18.225,
+      "landCost": 22.78125
+    }
+  ],
+  "totalAir": 15.19,
+  "totalSea": 18.23,
+  "totalLand": 22.78,
+  "totalWeight": 20,
+  "status": "new"
+}

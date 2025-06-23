@@ -1,6 +1,6 @@
 {
   "title": "Saf/uae/5th june",
-  "timestamp": "2025-06-23T12:03:18.448Z",
+  "timestamp": "2025-06-23T12:21:30.943Z",
   "boxes": [
     {
       "length": 10,
@@ -24,6 +24,16 @@
     },
     {
       "length": 58,
+      "width": "",
+      "height": "",
+      "weight": "",
+      "volume": 0,
+      "airCost": 0,
+      "seaCost": 0,
+      "landCost": 0
+    },
+    {
+      "length": "",
       "width": "",
       "height": "",
       "weight": "",
