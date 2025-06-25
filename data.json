@@ -1,1 +1,31 @@
-[]
+{
+  "title": "Maximus/Oman/243240/2p",
+  "timestamp": "2025-06-25T13:13:44.501Z",
+  "boxes": [
+    {
+      "length": 50,
+      "width": 50,
+      "height": 50,
+      "weight": 24.4,
+      "volume": 0.125,
+      "airCost": 20.833333333333332,
+      "seaCost": 25,
+      "landCost": 31.25
+    },
+    {
+      "length": 61,
+      "width": 61,
+      "height": 76,
+      "weight": 63.6,
+      "volume": 0.282796,
+      "airCost": 47.132666666666665,
+      "seaCost": 56.5592,
+      "landCost": 70.699
+    }
+  ],
+  "totalAir": 67.97,
+  "totalSea": 81.56,
+  "totalLand": 101.95,
+  "totalWeight": 88,
+  "status": "draft"
+}
