@@ -204,6 +204,9 @@ td[contenteditable="true"] {
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
 </head>
 <body>
 
@@ -713,95 +716,136 @@ function handleInvoiceSelection(value) {
   }*/
   
   function exportToExcel() {
-    const invoiceTitle = document.getElementById('invoiceTitle').value.trim();
+  const invoiceTitle = document.getElementById('invoiceTitle').value.trim();
 
-    if (!invoiceTitle) {
-      alert('Please enter the invoice title before exporting.');
-      return;
-    }
-    if (boxData.length === 0) {
-      alert('No data to export.');
-      return;
-    }
-    if (!boxData.some(row =>
-      !isNaN(row.length) && row.length > 0 &&
-      !isNaN(row.width) && row.width > 0 &&
-      !isNaN(row.height) && row.height > 0
-    )) {
-      alert('Please enter valid data in at least one box before exporting.');
-      return;
-    }
+  if (!invoiceTitle) {
+    alert('Please enter the invoice title before exporting.');
+    return;
+  }
+  if (boxData.length === 0) {
+    alert('No data to export.');
+    return;
+  }
+  if (!boxData.some(row =>
+    !isNaN(row.length) && row.length > 0 &&
+    !isNaN(row.width) && row.width > 0 &&
+    !isNaN(row.height) && row.height > 0
+  )) {
+    alert('Please enter valid data in at least one box before exporting.');
+    return;
+  }
 
-    const ws_data = [
-      ["#", "Length (cm)", "Width (cm)", "Height (cm)", "Gross Weight (kg)", "Volume (m³)", "Air", "Sea", "Land"]
-    ];
+  const ws_data = [
+    ["#", "Length (cm)", "Width (cm)", "Height (cm)", "Gross Weight (kg)", "Volume (m³)", "Air", "Sea", "Land"]
+  ];
 
-    boxData.forEach((box, i) => {
-      ws_data.push([
-        i + 1,
-        box.length || 0,
-        box.width || 0,
-        box.height || 0,
-        box.weight || 0,
-        box.volume ? box.volume.toFixed(3) : "0.000",
-        box.airCost ? box.airCost.toFixed(3) : "0.000",
-        box.seaCost ? box.seaCost.toFixed(3) : "0.000",
-        box.landCost ? box.landCost.toFixed(3) : "0.000"
-      ]);
-    });
+  boxData.forEach((box, i) => {
+    ws_data.push([
+      i + 1,
+      box.length || 0,
+      box.width || 0,
+      box.height || 0,
+      box.weight || 0,
+      box.volume ? box.volume.toFixed(3) : "0.000",
+      box.airCost ? box.airCost.toFixed(3) : "0.000",
+      box.seaCost ? box.seaCost.toFixed(3) : "0.000",
+      box.landCost ? box.landCost.toFixed(3) : "0.000"
+    ]);
+  });
 
-    ws_data.push([]);
-    const totalsRow = [
-      "Totals", "", "", "",
-      parseFloat(document.getElementById('totalWeight').textContent),
-      parseFloat(document.getElementById('totalVolume').textContent),
-      parseFloat(document.getElementById('totalAir').textContent),
-      parseFloat(document.getElementById('totalSea').textContent),
-      parseFloat(document.getElementById('totalLand').textContent)
-    ];
-    ws_data.push(totalsRow);
+  ws_data.push([]);
+  const totalsRow = [
+    "Totals", "", "", "",
+    parseFloat(document.getElementById('totalWeight').textContent),
+    parseFloat(document.getElementById('totalVolume').textContent),
+    parseFloat(document.getElementById('totalAir').textContent),
+    parseFloat(document.getElementById('totalSea').textContent),
+    parseFloat(document.getElementById('totalLand').textContent)
+  ];
+  ws_data.push(totalsRow);
 
-    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  // Export to Excel
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
 
-    // Apply styles
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const cell_address = { c: C, r: R };
-        const cell_ref = XLSX.utils.encode_cell(cell_address);
-        if (!ws[cell_ref]) continue;
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
+      if (!ws[cell_ref]) continue;
 
-        // Apply border to all cells
-        ws[cell_ref].s = {
-          border: {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-          }
-        };
+      ws[cell_ref].s = ws[cell_ref].s || {};
+      ws[cell_ref].s.border = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      };
 
-        // Bold header row
-        if (R === 0 || R === ws_data.length - 1) {
-          ws[cell_ref].s.font = { bold: true };
-        }
+      if (R === 0 || R === ws_data.length - 1) {
+        ws[cell_ref].s.font = { bold: true };
       }
     }
-
-    // Auto-width for columns
-    const maxColWidths = ws_data[0].map((_, colIndex) => {
-      return Math.max(
-        ...ws_data.map(row => (row[colIndex] ? row[colIndex].toString().length : 10))
-      );
-    });
-    ws['!cols'] = maxColWidths.map(w => ({ wch: w + 2 }));
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Boxes");
-
-    const filename = invoiceTitle.replace(/\s+/g, '_') + ".xlsx";
-    XLSX.writeFile(wb, filename);
   }
+
+  const colWidths = ws_data[0].map((_, colIdx) =>
+    Math.max(...ws_data.map(row => (row[colIdx] ? row[colIdx].toString().length : 0)), 10)
+  ).map(wch => ({ wch: wch + 2 }));
+
+  ws['!cols'] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Boxes");
+
+  const filename = invoiceTitle.replace(/\s+/g, '_') + ".xlsx";
+  XLSX.writeFile(wb, filename);
+
+  // Ask to download PDF as well
+  if (confirm("Excel file downloaded. Also download PDF version?")) {
+    exportToPDF(invoiceTitle, ws_data);
+  }
+}
+
+function exportToPDF(title, ws_data) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(14);
+  doc.text(`Invoice: ${title}`, 14, 15);
+
+  const header = ws_data[0];
+  const body = ws_data.slice(1).filter(row => row.length > 0); // remove empty row
+
+  const lastRow = ws_data[ws_data.length - 1]; // Totals row
+
+  doc.autoTable({
+    startY: 20,
+    head: [header],
+    body: body,
+    styles: {
+      halign: 'center',
+      valign: 'middle'
+    },
+    headStyles: {
+      fillColor: [220, 220, 220],
+      fontStyle: 'bold'
+    },
+    didDrawPage: function (data) {
+      // Add Totals as bold footer row
+      doc.autoTable({
+        startY: data.cursor.y + 5,
+        body: [lastRow],
+        styles: {
+          fontStyle: 'bold',
+          fillColor: [240, 240, 240],
+          halign: 'center'
+        },
+        theme: 'grid'
+      });
+    }
+  });
+
+  doc.save(`${title.replace(/\s+/g, '_')}.pdf`);
+}
 
   // Also send export data to backend
 fetch('/api/export', {
