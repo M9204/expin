@@ -734,8 +734,7 @@ function handleInvoiceSelection(value) {
     if (!boxData.some(row =>
       !isNaN(row.length) && row.length > 0 &&
       !isNaN(row.width) && row.width > 0 &&
-      !isNaN(row.height) && row.height > 0 &&
-      !isNaN(row.weight) && row.weight > 0
+      !isNaN(row.height) && row.height > 0 
     )) {
       alert('Please enter valid data in at least one box before exporting.');
       return;
