@@ -319,6 +319,8 @@ td[contenteditable="true"] {
     <p>Total Sea: <span id="totalSea">0</span></p>
     <p>Total Land: <span id="totalLand">0</span></p>
     <p>Total Gross Weight: <span id="totalWeight">0</span> kg</p>
+    <p>Total Volume (CPM): <span id="totalVolume">0</span> m³</p>
+    
   </div>
 
   <button id="exportButton" onclick="exportToExcel()">Export to Excel</button>
@@ -650,10 +652,10 @@ function handleInvoiceSelection(value) {
     const row = document.querySelector(`#boxTable tbody`).children[index];
     if (!row) return;
 
-    row.children[5].textContent = box.volume ? box.volume.toFixed(2) : '0.00';
-    row.children[6].textContent = box.airCost ? box.airCost.toFixed(2) : '0.00';
-    row.children[7].textContent = box.seaCost ? box.seaCost.toFixed(2) : '0.00';
-    row.children[8].textContent = box.landCost ? box.landCost.toFixed(2) : '0.00';
+    row.children[5].textContent = box.volume ? box.volume.toFixed(3) : '0.000';
+    row.children[6].textContent = box.airCost ? box.airCost.toFixed(3) : '0.000';
+    row.children[7].textContent = box.seaCost ? box.seaCost.toFixed(3) : '0.000';
+    row.children[8].textContent = box.landCost ? box.landCost.toFixed(3) : '0.000';
     recalcTotals();
     
 }
@@ -752,10 +754,10 @@ function handleInvoiceSelection(value) {
         box.width || 0,
         box.height || 0,
         box.weight || 0,
-        box.volume ? box.volume.toFixed(2) : "0.00",
-        box.airCost ? box.airCost.toFixed(2) : "0.00",
-        box.seaCost ? box.seaCost.toFixed(2) : "0.00",
-        box.landCost ? box.landCost.toFixed(2) : "0.00"
+        box.volume ? box.volume.toFixed(3) : "0.000",
+        box.airCost ? box.airCost.toFixed(3) : "0.000",
+        box.seaCost ? box.seaCost.toFixed(3) : "0.000",
+        box.landCost ? box.landCost.toFixed(3) : "0.000"
       ]);
     });
 
