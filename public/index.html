@@ -562,19 +562,21 @@ function handleInvoiceSelection(value) {
     });
   }
   function recalcTotals() {
-  let totalAir = 0, totalSea = 0, totalLand = 0, totalWeight = 0;
+  let totalAir = 0, totalSea = 0, totalLand = 0, totalWeight = 0, totalVolume= 0;
 
   boxData.forEach(box => {
     totalAir += box.airCost || 0;
     totalSea += box.seaCost || 0;
     totalLand += box.landCost || 0;
+    totalVolume  +=box.volume || 0;
     totalWeight += box.weight && !isNaN(box.weight) ? box.weight : 0;
   });
 
-  document.getElementById('totalAir').textContent = totalAir.toFixed(2);
-  document.getElementById('totalSea').textContent = totalSea.toFixed(2);
-  document.getElementById('totalLand').textContent = totalLand.toFixed(2);
-  document.getElementById('totalWeight').textContent = totalWeight.toFixed(2);
+  document.getElementById('totalAir').textContent = totalAir.toFixed(3);
+  document.getElementById('totalSea').textContent = totalSea.toFixed(3);
+  document.getElementById('totalLand').textContent = totalLand.toFixed(3);
+  document.getElementById('totalWeight').textContent = totalWeight.toFixed(3);
+  document.getElementById('totalVolume').textContent = totalVolume.toFixed(3);
 }
 
   // Handle edits on editable cells
@@ -636,6 +638,7 @@ function handleInvoiceSelection(value) {
     const w = parseFloat(box.width);
     const h = parseFloat(box.height);
     const weight = parseFloat(box.weight);
+    const volume = parseFloat(box.volume);
 
     if ([l, w, h, weight].some(v => isNaN(v))) {
       box.volume = 0;
@@ -656,6 +659,7 @@ function handleInvoiceSelection(value) {
     row.children[6].textContent = box.airCost ? box.airCost.toFixed(3) : '0.000';
     row.children[7].textContent = box.seaCost ? box.seaCost.toFixed(3) : '0.000';
     row.children[8].textContent = box.landCost ? box.landCost.toFixed(3) : '0.000';
+    
     recalcTotals();
     
 }
@@ -675,6 +679,7 @@ function handleInvoiceSelection(value) {
     totalSea: parseFloat(document.getElementById('totalSea').textContent),
     totalLand: parseFloat(document.getElementById('totalLand').textContent),
     totalWeight: parseFloat(document.getElementById('totalWeight').textContent),
+    totalVolume: parseFloat(document.getElementById('totalVolume').textContent),
     status: isNewInvoice ? 'new' : 'draft'
   };
 
