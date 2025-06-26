@@ -815,8 +815,16 @@ function exportToPDF(title, ws_data) {
   const header = ws_data[0];
   const body = ws_data.slice(1).filter(row => row.length > 0); // remove empty row
 
-  const lastRow = ws_data[ws_data.length - 1]; // Totals row
-
+  const lastRowRaw = ws_data[ws_data.length - 1]; // Totals row
+  const lastRow = [
+    "Totals",
+    "", "", "",
+    `${lastRowRaw[4]} kg`,
+    `${lastRowRaw[5]} m³`,
+    `${lastRowRaw[6]}`,
+    `${lastRowRaw[7]}`,
+    `${lastRowRaw[8]}`
+  ];
   doc.autoTable({
     startY: 20,
     head: [header],
