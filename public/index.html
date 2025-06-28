@@ -209,6 +209,7 @@ td[contenteditable="true"] {
 
 </head>
 <body>
+<div id="loadingSpinner" style="display:none;">Loading...</div>
 
 <div class="container">
   <h1>Box Volume and Shipping Calculator</h1>
@@ -281,15 +282,19 @@ function onUserInput(data) {
   let boxData = [];
   
   // Load saved data from localStorage on page load
-function loadInvoiceList() {
+function loadInvoiceList(auto = false) {
   fetch('/api/invoices')
     .then(res => res.json())
     .then(files => {
       window.allInvoices = files;
-      renderInvoiceDropdown(files);
+      if (!auto) renderInvoiceDropdown(files);
     })
     .catch(err => console.error("Failed to fetch invoices:", err));
 }
+
+// Auto-refresh every 10 seconds
+setInterval(() => loadInvoiceList(true), 10000);
+
 
 function renderInvoiceDropdown(invoices) {
   const dropdown = document.getElementById('invoiceDropdown');
@@ -323,17 +328,9 @@ function filterInvoices() {
 
 function loadSelectedInvoice() {
   const file = document.getElementById('invoiceSelector').value;
-  selectedInvoiceFile = file; // Save the filename
+  selectedInvoiceFile = file;
 
-  if (!file) {
-    // New invoice mode
-    boxData = [];
-    document.getElementById('invoiceTitle').value = '';
-    renderTable();
-    recalcTotals();
-    saveData(); // Save to data.json
-    return;
-  }
+  document.getElementById('loadingSpinner').style.display = 'block';
 
   fetch(`/api/invoices/${file}`)
     .then(res => res.json())
@@ -342,12 +339,14 @@ function loadSelectedInvoice() {
       document.getElementById('invoiceTitle').value = data.title || '';
       renderTable();
       recalcTotals();
-      saveData(); // Save to that invoice file
+      document.getElementById('loadingSpinner').style.display = 'none';
     })
-    .catch(err => alert("Failed to load invoice."));
-  saveData(); // Save into that file if needed
-
+    .catch(err => {
+      alert("Failed to load invoice.");
+      document.getElementById('loadingSpinner').style.display = 'none';
+    });
 }
+
 
 
 window.onload = () => {
