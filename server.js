@@ -12,6 +12,7 @@ app.use(express.static("public"));
 app.use(express.json());
 app.use(cors());
 
+const DRIVE_FOLDER_ID = "https://drive.google.com/drive/folders/1E4qgwXzo4NwvlVktF7xCWuhJgosrXrPD?usp=drive_link"
 const CREDENTIALS_PATH = path.join(__dirname, "credentials.json");
 const TOKEN_PATH = path.join(__dirname, "token.json");
 
@@ -62,7 +63,9 @@ app.get("/oauth2callback", async (req, res) => {
 
 async function uploadJsonFile(filename, data) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
-  const query = `name='${filename}' and mimeType='application/json' and trashed=false`;
+
+  // Search for file within the target folder
+  const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and trashed=false and mimeType='application/json'`;
   const listRes = await drive.files.list({
     q: query,
     fields: "files(id, name)",
@@ -70,7 +73,7 @@ async function uploadJsonFile(filename, data) {
   });
   const files = listRes.data.files;
 
-  const stream = Readable.from([JSON.stringify(data, null, 2)]); // ✅ FIXED stream
+  const stream = Readable.from([JSON.stringify(data, null, 2)]);
 
   if (files.length > 0) {
     const fileId = files[0].id;
@@ -86,6 +89,7 @@ async function uploadJsonFile(filename, data) {
     const fileMetadata = {
       name: filename,
       mimeType: "application/json",
+      parents: [DRIVE_FOLDER_ID], // 👈 place inside invoices folder
     };
     const media = {
       mimeType: "application/json",
@@ -100,18 +104,28 @@ async function uploadJsonFile(filename, data) {
   }
 }
 
+// ✅ MODIFIED list and download to filter inside `invoices` folder only
+async function listJsonFiles() {
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
+  const query = `'${DRIVE_FOLDER_ID}' in parents and mimeType='application/json' and trashed=false`;
+  const res = await drive.files.list({
+    q: query,
+    fields: "files(id, name)",
+    spaces: "drive",
+  });
+  return res.data.files.map((f) => f.name);
+}
+
 async function downloadJsonFile(filename) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
-  const query = `name='${filename}' and mimeType='application/json' and trashed=false`;
+  const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and mimeType='application/json' and trashed=false`;
   const listRes = await drive.files.list({
     q: query,
     fields: "files(id, name)",
     spaces: "drive",
   });
   const files = listRes.data.files;
-
   if (files.length === 0) throw new Error("File not found");
-
   const fileId = files[0].id;
   const res = await drive.files.get({ fileId, alt: "media" }, { responseType: "stream" });
 
@@ -124,20 +138,9 @@ async function downloadJsonFile(filename) {
   });
 }
 
-async function listJsonFiles() {
-  const drive = google.drive({ version: "v3", auth: oauth2Client });
-  const query = "mimeType='application/json' and trashed=false";
-  const res = await drive.files.list({
-    q: query,
-    fields: "files(id, name)",
-    spaces: "drive",
-  });
-  return res.data.files.map((f) => f.name);
-}
-
 async function deleteFileByName(filename) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
-  const query = `name='${filename}' and trashed=false`;
+  const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and trashed=false`;
   const listRes = await drive.files.list({
     q: query,
     fields: "files(id, name)",
@@ -147,6 +150,7 @@ async function deleteFileByName(filename) {
   const fileId = files[0].id;
   await drive.files.delete({ fileId });
 }
+
 
 // ========== API ROUTES ==========
 
