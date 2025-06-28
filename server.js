@@ -35,9 +35,13 @@ function setAuthCredentials(req, res, next) {
   if (fs.existsSync(TOKEN_PATH)) {
     const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
     oauth2Client.setCredentials(token);
+    next();
+  } else {
+    console.warn("🔒 No token.json found. Redirect to /auth first.");
+    return res.status(401).json({ error: "Not authenticated. Please visit /auth first." });
   }
-  next();
 }
+
 
 app.get("/auth", (req, res) => {
   const authUrl = oauth2Client.generateAuthUrl({
