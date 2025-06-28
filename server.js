@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 const { google } = require("googleapis");
-const { Readable } = require("stream"); // ✅ NEW: for streaming JSON to Drive
+const { Readable } = require("stream");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,13 +11,13 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static("public"));
 app.use(express.json());
 app.use(cors());
-                       //1E4qgwXzo4NwvlVktF7xCWuhJgosrXrPD
-const DRIVE_FOLDER_ID = "1E4qgwXzo4NwvlVktF7xCWuhJgosrXrPD"
+
+const DRIVE_FOLDER_ID = "1E4qgwXzo4NwvlVktF7xCWuhJgosrXrPD";
 const CREDENTIALS_PATH = path.join(__dirname, "credentials.json");
 const TOKEN_PATH = path.join(__dirname, "token.json");
 
 if (!fs.existsSync(CREDENTIALS_PATH)) {
-  console.error("Missing credentials.json. Please add it to project root.");
+  console.error("Missing credentials.json.");
   process.exit(1);
 }
 const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
@@ -54,9 +54,9 @@ app.get("/oauth2callback", async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
     fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
-    res.send("Authentication successful! You can now close this tab and use the API.");
+    res.send("✅ Authentication successful. You may now close this tab.");
   } catch (error) {
-    console.error("Error retrieving access token", error);
+    console.error("❌ Error retrieving access token:", error);
     res.status(500).send("Failed to retrieve access token.");
   }
 });
@@ -64,15 +64,13 @@ app.get("/oauth2callback", async (req, res) => {
 async function uploadJsonFile(filename, data) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-  // Search for file within the target folder
-  const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and trashed=false and mimeType='application/json'`;
+  const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and mimeType='application/json' and trashed=false`;
   const listRes = await drive.files.list({
     q: query,
     fields: "files(id, name)",
     spaces: "drive",
   });
   const files = listRes.data.files;
-
   const stream = Readable.from([JSON.stringify(data, null, 2)]);
 
   if (files.length > 0) {
@@ -89,7 +87,7 @@ async function uploadJsonFile(filename, data) {
     const fileMetadata = {
       name: filename,
       mimeType: "application/json",
-      parents: [DRIVE_FOLDER_ID], // 👈 place inside invoices folder
+      parents: [DRIVE_FOLDER_ID],
     };
     const media = {
       mimeType: "application/json",
@@ -102,18 +100,6 @@ async function uploadJsonFile(filename, data) {
     });
     return file.data.id;
   }
-}
-
-// ✅ MODIFIED list and download to filter inside `invoices` folder only
-async function listJsonFiles() {
-  const drive = google.drive({ version: "v3", auth: oauth2Client });
-  const query = `'${DRIVE_FOLDER_ID}' in parents and mimeType='application/json' and trashed=false`;
-  const res = await drive.files.list({
-    q: query,
-    fields: "files(id, name)",
-    spaces: "drive",
-  });
-  return res.data.files.map((f) => f.name);
 }
 
 async function downloadJsonFile(filename) {
@@ -134,8 +120,19 @@ async function downloadJsonFile(filename) {
     res.data
       .on("data", (chunk) => (data += chunk))
       .on("end", () => resolve(JSON.parse(data)))
-      .on("error", (err) => reject(err));
+      .on("error", reject);
   });
+}
+
+async function listJsonFiles() {
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
+  const query = `'${DRIVE_FOLDER_ID}' in parents and mimeType='application/json' and trashed=false`;
+  const res = await drive.files.list({
+    q: query,
+    fields: "files(id, name)",
+    spaces: "drive",
+  });
+  return res.data.files.map((f) => f.name);
 }
 
 async function deleteFileByName(filename) {
@@ -150,7 +147,6 @@ async function deleteFileByName(filename) {
   const fileId = files[0].id;
   await drive.files.delete({ fileId });
 }
-
 
 // ========== API ROUTES ==========
 
@@ -200,7 +196,7 @@ app.delete("/api/invoice/:filename", setAuthCredentials, async (req, res) => {
   }
 });
 
-// ========== Local Routes ==========
+// ========== Local Backup Routes ==========
 
 const DATA_PATH = path.join(__dirname, "data.json");
 
@@ -209,23 +205,16 @@ app.post("/api/data", (req, res) => {
   if (!body || typeof body !== "object") {
     return res.status(400).json({ error: "Invalid data format." });
   }
-
   fs.writeFile(DATA_PATH, JSON.stringify(body, null, 2), (err) => {
-    if (err) {
-      console.error("Failed to write data:", err);
-      return res.status(500).json({ error: "Failed to save data." });
-    }
-    res.json({ message: "Data saved successfully." });
+    if (err) return res.status(500).json({ error: "Failed to save local data." });
+    res.json({ message: "Local data saved." });
   });
 });
 
 app.post("/api/clear", (req, res) => {
   fs.writeFile(DATA_PATH, JSON.stringify([], null, 2), (err) => {
-    if (err) {
-      console.error("Failed to clear file:", err);
-      return res.status(500).json({ error: "Failed to clear data.json." });
-    }
-    res.json({ message: "Server data cleared." });
+    if (err) return res.status(500).json({ error: "Failed to clear local data." });
+    res.json({ message: "Local data cleared." });
   });
 });
 
@@ -234,6 +223,6 @@ app.get("/data.json", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`🔑 Authenticate at /auth if not already.`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🔑 Visit /auth to authenticate with Google Drive`);
 });
