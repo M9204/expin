@@ -426,18 +426,30 @@ td[contenteditable="true"] {
     selectedInvoiceFile = value;
     isNewInvoice = false;
     fetch(`/api/invoices/${value}`)
-      .then(res => res.json())
-      .then(data => {
-        boxData = data.boxes || [];
-        document.getElementById('invoiceTitle').value = data.title || '';
-        renderTable();
-        lcTotals();
-        document.getElementById('loadingSpinner').style.display = 'none';
-      })
-      .catch(err => {
-        alert("Failed to load invoice.");
-        document.getElementById('loadingSpinner').style.display = 'none';
-      });
+  .then(res => {
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
+  })
+  .then(data => {
+    if (!data || typeof data !== 'object' || !Array.isArray(data.boxes)) {
+      throw new Error("Invalid invoice format");
+    }
+
+    boxData = data.boxes;
+    document.getElementById('invoiceTitle').value = data.title || '';
+    renderTable();
+    recalcTotals();
+  })
+  .catch(err => {
+    console.error("Error loading invoice:", err);
+    alert("Failed to load invoice.");
+  })
+  .finally(() => {
+    document.getElementById('loadingSpinner').style.display = 'none';
+  });
+
   }
 
   function addRow() {
