@@ -331,7 +331,7 @@ td[contenteditable="true"] {
   // Keys for localStorage
   const STORAGE_KEY = 'boxCalculatorData';
   const INVOICE_TITLE_KEY = 'invoiceTitle';
-  let saveTimeout;
+  
   let lastCheckTime = 0;
   let boxData = [];
   let selectedInvoiceFile = '';
@@ -359,10 +359,7 @@ td[contenteditable="true"] {
     document.getElementById('saveBtn').addEventListener('click', saveData);
   };
 
-  function onUserInput() {
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(saveData, 3000);
-  }
+
 
   function loadInvoiceList(auto = false) {
     fetch('/api/invoices')
@@ -498,7 +495,7 @@ td[contenteditable="true"] {
           }
           
           recalcRow(index);
-          onUserInput();
+          
         });
         
         cell.appendChild(input);
@@ -567,7 +564,7 @@ td[contenteditable="true"] {
   }
 
   function saveData() {
-    clearTimeout(saveTimeout);
+    
     
     const title = document.getElementById('invoiceTitle').value.trim();
     if (!title) {
