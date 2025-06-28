@@ -11,8 +11,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static("public"));
 app.use(express.json());
 app.use(cors());
-
-const DRIVE_FOLDER_ID = "https://drive.google.com/drive/folders/1E4qgwXzo4NwvlVktF7xCWuhJgosrXrPD?usp=drive_link"
+                       //1E4qgwXzo4NwvlVktF7xCWuhJgosrXrPD
+const DRIVE_FOLDER_ID = "1E4qgwXzo4NwvlVktF7xCWuhJgosrXrPD"
 const CREDENTIALS_PATH = path.join(__dirname, "credentials.json");
 const TOKEN_PATH = path.join(__dirname, "token.json");
 
