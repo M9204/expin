@@ -4,7 +4,6 @@ const path = require("path");
 const cors = require("cors");
 const { google } = require("googleapis");
 const { Readable } = require("stream");
-const cache = require('memory-cache');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +11,32 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static("public"));
 app.use(express.json());
 app.use(cors());
+
+// Simple in-memory cache implementation
+const cache = {
+  store: {},
+  get(key) {
+    const entry = this.store[key];
+    if (!entry) return null;
+    
+    // Check if entry is expired
+    if (entry.expiry && Date.now() > entry.expiry) {
+      delete this.store[key];
+      return null;
+    }
+    
+    return entry.value;
+  },
+  put(key, value, ttl = 5000) {
+    this.store[key] = {
+      value,
+      expiry: ttl ? Date.now() + ttl : null
+    };
+  },
+  del(key) {
+    delete this.store[key];
+  }
+};
 
 const DRIVE_FOLDER_ID = "1E4qgwXzo4NwvlVktF7xCWuhJgosrXrPD";
 const CREDENTIALS_PATH = path.join(__dirname, "credentials.json");
