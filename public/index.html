@@ -201,6 +201,50 @@ td[contenteditable="true"] {
   .custom-dropdown li:hover {
     background-color: #f0f0f0;
   }
+  /* Add to your existing CSS */
+.remove-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.save-success {
+  background-color: #4CAF50 !important;
+}
+
+#invoiceDropdown {
+  position: absolute;
+  background: white;
+  border: 1px solid #ddd;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+#invoiceDropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+#invoiceDropdown li:hover {
+  background-color: #f0f0f0;
+}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
@@ -224,7 +268,13 @@ td[contenteditable="true"] {
   <input type="text" id="invoiceTitle" placeholder="Enter title" />
   
   <button onclick="addRow()">Add Box</button>
+  <!-- Add to your HTML -->
+<button id="saveBtn" onclick="saveData()">Save Invoice</button>
 
+<div style="position:relative;">
+  <input type="text" id="invoiceSearchInput" placeholder="Search invoices..." oninput="filterInvoices()">
+  <ul id="invoiceDropdown" style="display:none;"></ul>
+</div>
   <table id="boxTable" aria-label="Boxes data table">
     <thead>
       <tr>
