@@ -347,7 +347,7 @@ td[contenteditable="true"] {
         boxData = serverData.boxes || [];
         document.getElementById('invoiceTitle').value = serverData.title || '';
         renderTable();
-        recalcTotals();
+        lcTotals();
       })
       .catch(err => console.log("Using default data:", err));
     
@@ -415,7 +415,7 @@ td[contenteditable="true"] {
       document.getElementById('invoiceTitle').value = title;
       boxData = [];
       renderTable();
-      recalcTotals();
+      lcTotals();
       saveData();
       return;
     }
@@ -431,7 +431,7 @@ td[contenteditable="true"] {
         boxData = data.boxes || [];
         document.getElementById('invoiceTitle').value = data.title || '';
         renderTable();
-        recalcTotals();
+        lcTotals();
         document.getElementById('loadingSpinner').style.display = 'none';
       })
       .catch(err => {
@@ -559,7 +559,6 @@ td[contenteditable="true"] {
       box.landCost = 0;
     }
     
-    renderTable();
     recalcTotals();
   }
 
