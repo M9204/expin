@@ -151,16 +151,22 @@ async function listJsonFiles() {
   if (cached) return cached;
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
+  const query = `'${DRIVE_FOLDER_ID}' in parents and trashed=false`;
   const res = await drive.files.list({
-    q: `'${DRIVE_FOLDER_ID}' in parents and mimeType='application/json' and trashed=false`,
+    q: query,
     fields: "files(id, name, modifiedTime)",
     spaces: "drive",
     orderBy: "modifiedTime desc"
   });
-  const files = res.data.files.map((f) => f.name);
-  cache.put('files', files, 5000);
-  return files;
+  
+  const allFiles = res.data.files || [];
+  // Filter only .json files by extension (case-insensitive)
+  const jsonFiles = allFiles.filter(f => f.name.toLowerCase().endsWith('.json'));
+
+  cache.put('files', jsonFiles.map(f => f.name), 5000);
+  return jsonFiles.map(f => f.name);
 }
+
 
 async function deleteFileByName(filename) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
