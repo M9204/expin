@@ -17,7 +17,7 @@ const CREDENTIALS_PATH = path.join(__dirname, "credentials.json");
 const TOKEN_PATH = path.join(__dirname, "token.json");
 
 if (!fs.existsSync(CREDENTIALS_PATH)) {
-  console.error("Missing credentials.json.");
+  console.error("❌ Missing credentials.json.");
   process.exit(1);
 }
 const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
@@ -31,54 +31,56 @@ const oauth2Client = new google.auth.OAuth2(
 
 const SCOPES = ["https://www.googleapis.com/auth/drive.file"];
 
+// 🔐 Load saved tokens (if available)
 function setAuthCredentials(req, res, next) {
   if (fs.existsSync(TOKEN_PATH)) {
     const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
+    if (!token.refresh_token) {
+      return res.status(401).json({ error: "Missing refresh token. Please re-authenticate at /auth." });
+    }
     oauth2Client.setCredentials(token);
     next();
   } else {
-    console.warn("🔒 No token.json found. Redirect to /auth first.");
+    console.warn("No token.json found. Redirect to /auth.");
     return res.status(401).json({ error: "Not authenticated. Please visit /auth first." });
   }
 }
 
-
+// 🔗 Step 1: Redirect user to Google's consent screen
 app.get("/auth", (req, res) => {
   const authUrl = oauth2Client.generateAuthUrl({
-    access_type: "offline",
+    access_type: "offline",       // ensures refresh_token
     scope: SCOPES,
+    prompt: "consent",            // force refresh_token every time
   });
   res.redirect(authUrl);
 });
 
+// 🔑 Step 2: Handle OAuth2 callback and save token
 app.get("/oauth2callback", async (req, res) => {
   const code = req.query.code;
   if (!code) return res.status(400).send("Missing authorization code.");
   try {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
-    fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
-    res.send("✅ Authentication successful. You may now close this tab.");
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
+    res.send("✅ Authentication successful. You can close this window.");
   } catch (error) {
-    console.error("❌ Error retrieving access token:", error);
+    console.error("❌ Failed to retrieve access token:", error);
     res.status(500).send("Failed to retrieve access token.");
   }
 });
 
+// 📤 Upload JSON file
 async function uploadJsonFile(filename, data) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
   const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and mimeType='application/json' and trashed=false`;
-  const listRes = await drive.files.list({
-    q: query,
-    fields: "files(id, name)",
-    spaces: "drive",
-  });
-  const files = listRes.data.files;
+  const listRes = await drive.files.list({ q: query, fields: "files(id, name)" });
   const stream = Readable.from([JSON.stringify(data, null, 2)]);
 
-  if (files.length > 0) {
-    const fileId = files[0].id;
+  if (listRes.data.files.length > 0) {
+    const fileId = listRes.data.files[0].id;
     await drive.files.update({
       fileId,
       media: {
@@ -93,78 +95,65 @@ async function uploadJsonFile(filename, data) {
       mimeType: "application/json",
       parents: [DRIVE_FOLDER_ID],
     };
-    const media = {
-      mimeType: "application/json",
-      body: stream,
-    };
     const file = await drive.files.create({
       resource: fileMetadata,
-      media,
+      media: { mimeType: "application/json", body: stream },
       fields: "id",
     });
     return file.data.id;
   }
 }
 
+// 📥 Download a JSON file by name
 async function downloadJsonFile(filename) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
   const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and mimeType='application/json' and trashed=false`;
-  const listRes = await drive.files.list({
-    q: query,
-    fields: "files(id, name)",
-    spaces: "drive",
-  });
-  const files = listRes.data.files;
+  const res = await drive.files.list({ q: query, fields: "files(id, name)" });
+  const files = res.data.files;
   if (files.length === 0) throw new Error("File not found");
   const fileId = files[0].id;
-  const res = await drive.files.get({ fileId, alt: "media" }, { responseType: "stream" });
+  const stream = await drive.files.get({ fileId, alt: "media" }, { responseType: "stream" });
 
   return new Promise((resolve, reject) => {
     let data = "";
-    res.data
+    stream.data
       .on("data", (chunk) => (data += chunk))
       .on("end", () => resolve(JSON.parse(data)))
       .on("error", reject);
   });
 }
 
+// 📁 List all JSON invoice files
 async function listJsonFiles() {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
-  const query = `'${DRIVE_FOLDER_ID}' in parents and mimeType='application/json' and trashed=false`;
   const res = await drive.files.list({
-    q: query,
+    q: `'${DRIVE_FOLDER_ID}' in parents and mimeType='application/json' and trashed=false`,
     fields: "files(id, name)",
     spaces: "drive",
   });
   return res.data.files.map((f) => f.name);
 }
 
+// 🗑️ Delete a file by name
 async function deleteFileByName(filename) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
   const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and trashed=false`;
-  const listRes = await drive.files.list({
-    q: query,
-    fields: "files(id, name)",
-  });
-  const files = listRes.data.files;
+  const res = await drive.files.list({ q: query, fields: "files(id, name)" });
+  const files = res.data.files;
   if (files.length === 0) throw new Error("File not found");
-  const fileId = files[0].id;
-  await drive.files.delete({ fileId });
+  await drive.files.delete({ fileId: files[0].id });
 }
 
-// ========== API ROUTES ==========
+// ========== API Routes ==========
 
 app.post("/api/invoice/:filename", setAuthCredentials, async (req, res) => {
   try {
     const filename = req.params.filename.replace(/[^\w\-\.]/g, "");
-    if (!req.body || typeof req.body !== "object") {
-      return res.status(400).json({ error: "Invalid data format." });
-    }
     await uploadJsonFile(filename, req.body);
-    res.json({ message: `${filename} saved successfully.` });
+    res.json({ message: `${filename} saved to Google Drive.` });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to save invoice data." });
+    res.status(500).json({ error: "Failed to save invoice." });
   }
 });
 
@@ -191,23 +180,22 @@ app.get("/api/invoices/:name", setAuthCredentials, async (req, res) => {
 
 app.delete("/api/invoice/:filename", setAuthCredentials, async (req, res) => {
   try {
-    const filename = req.params.filename;
-    await deleteFileByName(filename);
-    res.json({ message: `${filename} deleted successfully.` });
+    await deleteFileByName(req.params.filename);
+    res.json({ message: `${req.params.filename} deleted.` });
   } catch (err) {
     console.error(err);
     res.status(404).json({ error: "Invoice not found." });
   }
 });
 
-// ========== Local Backup Routes ==========
+// ========== Local Fallback Routes ==========
 
 const DATA_PATH = path.join(__dirname, "data.json");
 
 app.post("/api/data", (req, res) => {
   const body = req.body;
   if (!body || typeof body !== "object") {
-    return res.status(400).json({ error: "Invalid data format." });
+    return res.status(400).json({ error: "Invalid data." });
   }
   fs.writeFile(DATA_PATH, JSON.stringify(body, null, 2), (err) => {
     if (err) return res.status(500).json({ error: "Failed to save local data." });
@@ -227,6 +215,6 @@ app.get("/data.json", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔑 Visit /auth to authenticate with Google Drive`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🔑 Visit http://localhost:${PORT}/auth to authenticate`);
 });
