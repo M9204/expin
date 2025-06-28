@@ -4,6 +4,7 @@ const path = require("path");
 const cors = require("cors");
 const { google } = require("googleapis");
 const { Readable } = require("stream");
+const cache = require('memory-cache');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,7 +32,6 @@ const oauth2Client = new google.auth.OAuth2(
 
 const SCOPES = ["https://www.googleapis.com/auth/drive.file"];
 
-// 🔐 Load saved tokens (if available)
 function setAuthCredentials(req, res, next) {
   if (fs.existsSync(TOKEN_PATH)) {
     const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
@@ -46,17 +46,15 @@ function setAuthCredentials(req, res, next) {
   }
 }
 
-// 🔗 Step 1: Redirect user to Google's consent screen
 app.get("/auth", (req, res) => {
   const authUrl = oauth2Client.generateAuthUrl({
-    access_type: "offline",       // ensures refresh_token
+    access_type: "offline",
     scope: SCOPES,
-    prompt: "consent",            // force refresh_token every time
+    prompt: "consent",
   });
   res.redirect(authUrl);
 });
 
-// 🔑 Step 2: Handle OAuth2 callback and save token
 app.get("/oauth2callback", async (req, res) => {
   const code = req.query.code;
   if (!code) return res.status(400).send("Missing authorization code.");
@@ -71,7 +69,6 @@ app.get("/oauth2callback", async (req, res) => {
   }
 });
 
-// 📤 Upload JSON file
 async function uploadJsonFile(filename, data) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
@@ -88,6 +85,7 @@ async function uploadJsonFile(filename, data) {
         body: stream,
       },
     });
+    cache.del('files');
     return fileId;
   } else {
     const fileMetadata = {
@@ -100,11 +98,11 @@ async function uploadJsonFile(filename, data) {
       media: { mimeType: "application/json", body: stream },
       fields: "id",
     });
+    cache.del('files');
     return file.data.id;
   }
 }
 
-// 📥 Download a JSON file by name
 async function downloadJsonFile(filename) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
   const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and mimeType='application/json' and trashed=false`;
@@ -123,18 +121,22 @@ async function downloadJsonFile(filename) {
   });
 }
 
-// 📁 List all JSON invoice files
 async function listJsonFiles() {
+  const cached = cache.get('files');
+  if (cached) return cached;
+
   const drive = google.drive({ version: "v3", auth: oauth2Client });
   const res = await drive.files.list({
     q: `'${DRIVE_FOLDER_ID}' in parents and mimeType='application/json' and trashed=false`,
-    fields: "files(id, name)",
+    fields: "files(id, name, modifiedTime)",
     spaces: "drive",
+    orderBy: "modifiedTime desc"
   });
-  return res.data.files.map((f) => f.name);
+  const files = res.data.files.map((f) => f.name);
+  cache.put('files', files, 5000);
+  return files;
 }
 
-// 🗑️ Delete a file by name
 async function deleteFileByName(filename) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
   const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and trashed=false`;
@@ -142,9 +144,18 @@ async function deleteFileByName(filename) {
   const files = res.data.files;
   if (files.length === 0) throw new Error("File not found");
   await drive.files.delete({ fileId: files[0].id });
+  cache.del('files');
 }
 
-// ========== API Routes ==========
+app.get("/api/invoices/check", setAuthCredentials, async (req, res) => {
+  try {
+    const files = await listJsonFiles();
+    res.json({ files });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to check for updates." });
+  }
+});
 
 app.post("/api/invoice/:filename", setAuthCredentials, async (req, res) => {
   try {
@@ -187,8 +198,6 @@ app.delete("/api/invoice/:filename", setAuthCredentials, async (req, res) => {
     res.status(404).json({ error: "Invoice not found." });
   }
 });
-
-// ========== Local Fallback Routes ==========
 
 const DATA_PATH = path.join(__dirname, "data.json");
 
