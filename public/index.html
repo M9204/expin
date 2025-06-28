@@ -259,6 +259,22 @@ td[contenteditable="true"] {
   // Keys for localStorage
   const STORAGE_KEY = 'boxCalculatorData';
   const INVOICE_TITLE_KEY = 'invoiceTitle';
+let saveTimeout;
+
+function onUserInput(data) {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    // Send data to your API after user stops typing for 3 seconds
+    fetch('/api/invoice/myinvoice.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    .then(res => res.json())
+    .then(response => console.log('Saved:', response))
+    .catch(console.error);
+  }, 3000);
+}
 
   // Box data array
   
