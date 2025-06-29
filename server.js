@@ -170,20 +170,28 @@ async function listJsonFiles() {
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-  // Less strict query: look for any file with `.json` in its name (regardless of MIME)
-  const query = `'${DRIVE_FOLDER_ID}' in parents and name contains '.json' and trashed=false`;
+  // Query all files in folder (don't filter by name/mimetype here)
+  const query = `'${DRIVE_FOLDER_ID}' in parents and trashed = false`;
 
   const res = await drive.files.list({
     q: query,
-    fields: "files(id, name, modifiedTime)",
+    fields: "files(id, name, mimeType, modifiedTime)",
     spaces: "drive",
     orderBy: "modifiedTime desc"
   });
 
   const allFiles = res.data.files || [];
 
-  // Keep only filenames that end with .json (case-insensitive)
-  const jsonFiles = allFiles.filter(f => f.name.toLowerCase().endsWith('.json'));
+  // Log for debugging
+  console.log("📂 All files in folder:");
+  allFiles.forEach(file => {
+    console.log(` - ${file.name} (${file.mimeType})`);
+  });
+
+  // Keep only files ending in .json (case-insensitive)
+  const jsonFiles = allFiles.filter(file =>
+    file.name && file.name.toLowerCase().endsWith(".json")
+  );
 
   const fileNames = jsonFiles.map(f => f.name);
   cache.put('files', fileNames, 5000);
