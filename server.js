@@ -151,20 +151,26 @@ async function listJsonFiles() {
   if (cached) return cached;
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
-  const query = `'${DRIVE_FOLDER_ID}' in parents and trashed=false`;
+
+  // Less strict query: look for any file with `.json` in its name (regardless of MIME)
+  const query = `'${DRIVE_FOLDER_ID}' in parents and name contains '.json' and trashed=false`;
+
   const res = await drive.files.list({
     q: query,
     fields: "files(id, name, modifiedTime)",
     spaces: "drive",
     orderBy: "modifiedTime desc"
   });
-  
+
   const allFiles = res.data.files || [];
-  // Filter only .json files by extension (case-insensitive)
+
+  // Keep only filenames that end with .json (case-insensitive)
   const jsonFiles = allFiles.filter(f => f.name.toLowerCase().endsWith('.json'));
 
-  cache.put('files', jsonFiles.map(f => f.name), 5000);
-  return jsonFiles.map(f => f.name);
+  const fileNames = jsonFiles.map(f => f.name);
+  cache.put('files', fileNames, 5000);
+
+  return fileNames;
 }
 
 
