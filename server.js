@@ -87,12 +87,30 @@ app.get("/oauth2callback", async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
     fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
-    res.send("✅ Authentication successful. You can close this window.");
+
+    // HTML with 2-second redirect
+    res.send(`
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>Authentication Successful</title>
+          <meta http-equiv="refresh" content="2; url=https://expin-rwyq.onrender.com/" />
+          <style>
+            body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+          </style>
+        </head>
+        <body>
+          <h2>✅ Authentication successful!</h2>
+          <p>Redirecting to main app...</p>
+        </body>
+      </html>
+    `);
   } catch (error) {
     console.error("❌ Failed to retrieve access token:", error);
     res.status(500).send("Failed to retrieve access token.");
   }
 });
+
 
 async function uploadJsonFile(filename, data) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
