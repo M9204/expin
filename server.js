@@ -168,7 +168,9 @@ async function downloadJsonFile(filename) {
 async function listJsonFiles() {
   // const cached = cache.get('files');
   //if (cached) return cached;
-
+  if (!force) {
+    const cached = cache.get('files');
+    if (cached) return cached;
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
   // Query all files in folder (don't filter by name/mimetype here)
@@ -234,13 +236,15 @@ app.post("/api/invoice/:filename", setAuthCredentials, async (req, res) => {
 
 app.get("/api/invoices", setAuthCredentials, async (req, res) => {
   try {
-    const files = await listJsonFiles();
+    const forceRefresh = req.query.nocache === "1";
+    const files = await listJsonFiles(forceRefresh);
     res.json(files);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to list invoices." });
   }
 });
+
 
 app.get("/api/invoices/:name", setAuthCredentials, async (req, res) => {
   try {
