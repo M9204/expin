@@ -194,7 +194,7 @@ async function listJsonFiles() {
     file.name && file.name.toLowerCase().endsWith(".json")
   );
 
-  // const fileNames = jsonFiles.map(f => f.name);
+  const fileNames = jsonFiles.map(f => f.name);
   // cache.put('files', fileNames, 5000);
 
   return fileNames;
