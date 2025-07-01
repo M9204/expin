@@ -115,7 +115,7 @@ app.get("/oauth2callback", async (req, res) => {
 async function uploadJsonFile(filename, data) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-  const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and mimeType='application/json' and trashed=false`;
+  const query = `'${DRIVE_FOLDER_ID}' in parents and name='${filename}' and trashed=false`;
   const listRes = await drive.files.list({ q: query, fields: "files(id, name)" });
   const stream = Readable.from([JSON.stringify(data, null, 2)]);
 
@@ -145,6 +145,7 @@ async function uploadJsonFile(filename, data) {
     return file.data.id;
   }
 }
+
 
 async function downloadJsonFile(filename) {
   const drive = google.drive({ version: "v3", auth: oauth2Client });
