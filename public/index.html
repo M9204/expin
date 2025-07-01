@@ -362,7 +362,7 @@ td[contenteditable="true"] {
 
 
   function loadInvoiceList(auto = false) {
-  fetch('/api/invoices')
+  fetch('/api/invoices?nocache=1') // <-- force refresh
     .then(res => res.json())
     .then(files => {
       const processed = files.map(f => ({
@@ -377,6 +377,7 @@ td[contenteditable="true"] {
     })
     .catch(err => console.error("Failed to fetch invoices:", err));
 }
+
 
 function renderInvoiceDropdown(invoices) {
   const dropdown = document.getElementById('invoiceDropdown');
