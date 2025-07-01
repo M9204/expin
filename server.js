@@ -165,15 +165,14 @@ async function downloadJsonFile(filename) {
   });
 }
 
-async function listJsonFiles() {
-  // const cached = cache.get('files');
-  //if (cached) return cached;
+async function listJsonFiles(force = false) {
   if (!force) {
     const cached = cache.get('files');
     if (cached) return cached;
+  }
+
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-  // Query all files in folder (don't filter by name/mimetype here)
   const query = `'${DRIVE_FOLDER_ID}' in parents and trashed = false`;
 
   const res = await drive.files.list({
@@ -185,19 +184,17 @@ async function listJsonFiles() {
 
   const allFiles = res.data.files || [];
 
-  // Log for debugging
   console.log("📂 All files in folder:");
   allFiles.forEach(file => {
     console.log(` - ${file.name} (${file.mimeType})`);
   });
 
-  // Keep only files ending in .json (case-insensitive)
   const jsonFiles = allFiles.filter(file =>
     file.name && file.name.toLowerCase().endsWith(".json")
   );
 
   const fileNames = jsonFiles.map(f => f.name);
-  // cache.put('files', fileNames, 5000);
+  cache.put('files', fileNames, 5000); // optional but recommended
 
   return fileNames;
 }
