@@ -362,22 +362,23 @@ td[contenteditable="true"] {
 
 
   function loadInvoiceList(auto = false) {
-    fetch('/api/invoices')
-      .then(res => res.json())
-      .then(files => {
-        const processed = files.map(f => ({
-          name: f,
-          display: f.replace('.json', '')
-        }));
-        if (JSON.stringify(processed) !== JSON.stringify(allInvoices)) {
-          allInvoices = processed;
-          if (!auto) renderInvoiceDropdown(processed);
-        }
-      })
-      .catch(err => console.error("Failed to fetch invoices:", err));
-  }
+  fetch('/api/invoices')
+    .then(res => res.json())
+    .then(files => {
+      const processed = files.map(f => ({
+        name: f, // full filename like google.json
+        display: f.replace(/\.json$/i, '') // shown in dropdown
+      }));
 
-  function renderInvoiceDropdown(invoices) {
+      if (JSON.stringify(processed) !== JSON.stringify(allInvoices)) {
+        allInvoices = processed;
+        if (!auto) renderInvoiceDropdown(processed);
+      }
+    })
+    .catch(err => console.error("Failed to fetch invoices:", err));
+}
+
+function renderInvoiceDropdown(invoices) {
   const dropdown = document.getElementById('invoiceDropdown');
   dropdown.innerHTML = '';
 
@@ -397,14 +398,15 @@ td[contenteditable="true"] {
 }
 
 
+
   function filterInvoices() {
   const searchTerm = document.getElementById('invoiceSearchInput').value.toLowerCase();
   const filtered = allInvoices.filter(({ name, display }) =>
-    name.toLowerCase().includes(searchTerm) ||
-    display.toLowerCase().includes(searchTerm)
+    name.toLowerCase().includes(searchTerm) || display.toLowerCase().includes(searchTerm)
   );
   renderInvoiceDropdown(filtered);
 }
+
 
   function handleInvoiceSelection(value) {
     document.getElementById('invoiceDropdown').style.display = 'none';
