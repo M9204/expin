@@ -166,8 +166,8 @@ async function downloadJsonFile(filename) {
 }
 
 async function listJsonFiles() {
-  const cached = cache.get('files');
-  if (cached) return cached;
+  // const cached = cache.get('files');
+  //if (cached) return cached;
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
@@ -194,8 +194,8 @@ async function listJsonFiles() {
     file.name && file.name.toLowerCase().endsWith(".json")
   );
 
-  const fileNames = jsonFiles.map(f => f.name);
-  cache.put('files', fileNames, 5000);
+  // const fileNames = jsonFiles.map(f => f.name);
+  // cache.put('files', fileNames, 5000);
 
   return fileNames;
 }
