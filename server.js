@@ -194,7 +194,7 @@ async function listJsonFiles(force = false) {
   );
 
   const fileNames = jsonFiles.map(f => f.name);
-  cache.put('files', fileNames, 5000); // optional but recommended
+  cache.put('files', fileNames, 1000); // optional but recommended
 
   return fileNames;
 }
