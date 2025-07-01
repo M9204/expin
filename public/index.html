@@ -365,43 +365,46 @@ td[contenteditable="true"] {
     fetch('/api/invoices')
       .then(res => res.json())
       .then(files => {
-        // Only update if files have changed
-        if (JSON.stringify(files) !== JSON.stringify(allInvoices)) {
-          allInvoices = files;
-          if (!auto) renderInvoiceDropdown(files);
+        const processed = files.map(f => ({
+          name: f,
+          display: f.replace('.json', '')
+        }));
+        if (JSON.stringify(processed) !== JSON.stringify(allInvoices)) {
+          allInvoices = processed;
+          if (!auto) renderInvoiceDropdown(processed);
         }
       })
       .catch(err => console.error("Failed to fetch invoices:", err));
   }
 
   function renderInvoiceDropdown(invoices) {
-    const dropdown = document.getElementById('invoiceDropdown');
-    dropdown.innerHTML = '';
+  const dropdown = document.getElementById('invoiceDropdown');
+  dropdown.innerHTML = '';
 
-    // Add New Invoice option
-    const addNew = document.createElement('li');
-    addNew.textContent = '➕ Add New Invoice';
-    addNew.onclick = () => handleInvoiceSelection('__new__');
-    dropdown.appendChild(addNew);
+  const addNew = document.createElement('li');
+  addNew.textContent = '➕ Add New Invoice';
+  addNew.onclick = () => handleInvoiceSelection('__new__');
+  dropdown.appendChild(addNew);
 
-    // Add existing invoices
-    invoices.forEach(file => {
-      const li = document.createElement('li');
-      li.textContent = file.replace('.json', '');
-      li.onclick = () => handleInvoiceSelection(file);
-      dropdown.appendChild(li);
-    });
+  invoices.forEach(({ name, display }) => {
+    const li = document.createElement('li');
+    li.textContent = display;
+    li.onclick = () => handleInvoiceSelection(name);
+    dropdown.appendChild(li);
+  });
 
-    dropdown.style.display = 'block';
-  }
+  dropdown.style.display = 'block';
+}
+
 
   function filterInvoices() {
-    const searchTerm = document.getElementById('invoiceSearchInput').value.toLowerCase();
-    const filtered = allInvoices.filter(file => 
-      file.toLowerCase().includes(searchTerm)
-    );
-    renderInvoiceDropdown(filtered);
-  }
+  const searchTerm = document.getElementById('invoiceSearchInput').value.toLowerCase();
+  const filtered = allInvoices.filter(({ name, display }) =>
+    name.toLowerCase().includes(searchTerm) ||
+    display.toLowerCase().includes(searchTerm)
+  );
+  renderInvoiceDropdown(filtered);
+}
 
   function handleInvoiceSelection(value) {
     document.getElementById('invoiceDropdown').style.display = 'none';
