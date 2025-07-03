@@ -188,10 +188,13 @@ async function listJsonFiles(force = false) {
   allFiles.forEach(file => {
     console.log(` - ${file.name} (${file.mimeType})`);
   });
-
+/*
   const jsonFiles = allFiles.filter(file =>
     file.name && file.name.toLowerCase().endsWith(".json")
-  );
+  );*/
+// DEBUG: Show everything regardless of extension
+console.log("🔍 All file names:", allFiles.map(f => f.name));
+return allFiles.map(f => f.name); // skip filtering for test
 
   const fileNames = jsonFiles.map(f => f.name);
   cache.put('files', fileNames, 1000); // optional but recommended
@@ -230,6 +233,17 @@ app.post("/api/invoice/:filename", setAuthCredentials, async (req, res) => {
     res.status(500).json({ error: "Failed to save invoice." });
   }
 });
+
+app.get("/api/debug/files", setAuthCredentials, async (req, res) => {
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
+  const resData = await drive.files.list({
+    q: `'${DRIVE_FOLDER_ID}' in parents and trashed = false`,
+    fields: "files(id, name, mimeType, modifiedTime, owners)",
+    orderBy: "modifiedTime desc",
+  });
+  res.json(resData.data.files);
+});
+
 
 app.get("/api/invoices", setAuthCredentials, async (req, res) => {
   try {
