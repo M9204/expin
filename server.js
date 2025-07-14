@@ -77,7 +77,7 @@ app.get("/oauth2callback", async (req, res) => {
     oauth2Client.setCredentials(tokens);
     fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
     res.send(`
-      <html><head><meta http-equiv="refresh" content="2; url=https://expin-rwyq.onrender.com/" />
+      <html><head><meta http-equiv="refresh" content="2; url=https://m9204.github.io/expin/" />
       <title>Authenticated</title></head>
       <body style="text-align:center;font-family:sans-serif;">
       <h2>✅ Authentication successful!</h2>
